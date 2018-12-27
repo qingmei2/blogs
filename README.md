@@ -8,14 +8,14 @@
 
 你可以在这里找到我：
 
-> **Github** https://github.com/qingmei2  
- **CSDN**   https://blog.csdn.net/mq2553299  
- **掘金**   https://juejin.im/user/588555ff1b69e600591e8462  
- **简书**    https://www.jianshu.com/u/df76f81fe3ff   
- **慕课网**  https://www.imooc.com/u/6936865
+>**Github:** https://github.com/qingmei2  
+ **CSDN:**   https://blog.csdn.net/mq2553299  
+ **掘金:**   https://juejin.im/user/588555ff1b69e600591e8462  
+ **简书:**    https://www.jianshu.com/u/df76f81fe3ff   
+ **慕课网:**  https://www.imooc.com/u/6936865
 
-> **Email**  mq2553299@qq.com  
-> **WeChat** mq2553299
+> **Email:**  mq2553299@qq.com  
+> **WeChat:** mq2553299
 
 ### 关于知识付费
 
