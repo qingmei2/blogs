@@ -6,4 +6,4 @@
 
 在此我真挚的希望，在发现文章的问题时，您能够力所能及对我进行警醒，通过 **评论** 、 **Email** 或者是 **提issue** ,这都将是对开源精神本身很大的臂助。
 
-[返回上一页](https://bitbucket.org/qingmei2/blogs/src/master/)
+[返回上一页](https://github.com/qingmei2/Programming-life)

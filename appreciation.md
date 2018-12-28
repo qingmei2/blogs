@@ -10,9 +10,9 @@
 
 我会 **用自己最大的努力写好每一篇文章**，也欢迎通过 **评论和建议** 一起进行技术讨论。
 
-[返回上一页](https://bitbucket.org/qingmei2/blogs/src/master/)
+[返回上一页](https://github.com/qingmei2/Programming-life)
 
 ### 赞赏码
 
 
-<div align:left;display:inline;> <img width="360" height="360" src="https://bitbucket.org/qingmei2/blogs/src/master/art/alipay.jpg"/> <img width="360" height="360" src="https://bitbucket.org/qingmei2/blogs/src/master/art/wechat.jpg"/> </div>
+<div align:left;display:inline;> <img width="360" height="360" src="https://github.com/qingmei2/Programming-life/blob/master/art/alipay.jpg"/> <img width="360" height="360" src="https://github.com/qingmei2/Programming-life/blob/master/art/wechat.jpg"/> </div>

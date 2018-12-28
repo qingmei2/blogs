@@ -1,6 +1,6 @@
-## MyBlogs
+## Programming-life
 
-我的个人博客仓库
+编程历程的记录.
 
 ### 关于我
 
@@ -19,15 +19,15 @@
 
 ### 关于纠错（issues、PR）
 
-[点我查看](https://bitbucket.org/qingmei2/blogs/src/master/error_collection.md)
+[点我查看](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
 
 ### 关于知识付费
 
-[点我查看](https://bitbucket.org/qingmei2/blogs/src/master/appreciation.md)
+[点我查看](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
 
 ## License
 
-    The MyBlogs: Apache License
+    The Programming-life: Apache License
 
     Copyright (c) 2019 qingmei2
 
