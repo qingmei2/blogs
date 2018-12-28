@@ -15,4 +15,4 @@
 ### 赞赏码
 
 
-<div align:left;display:inline;> <img width="360" height="360" src="https://github.com/qingmei2/Programming-life/blob/master/art/alipay.jpg"/> <img width="360" height="360" src="https://github.com/qingmei2/Programming-life/blob/master/art/wechat.jpg"/> </div>
+<div align:left;display:inline;> <img width="240" height="240" src="https://github.com/qingmei2/Programming-life/blob/master/art/alipay.jpg"/> <img width="240" height="240" src="https://github.com/qingmei2/Programming-life/blob/master/art/wechat.jpg"/> </div>
