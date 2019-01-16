@@ -12,6 +12,7 @@
 >* [Android官方架构组件LiveData: 观察者模式领域二三事](https://www.jianshu.com/p/550a8bd71214)
 >* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
 >* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)  
+>* [Android官方架构组件DataBinding双向绑定篇: 观察者模式的殊途同归](https://www.jianshu.com/p/e8b6ba90de53)
 
 #### 1.2 实战篇
 >* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
