@@ -88,8 +88,9 @@ class MyActivity extends Activity implements MyView {
 
 ##### 剧透：我认为我们确实需要服务。
 
+---
 
-**--------------------------广告分割线------------------------------**
+## 系列目录
 
 **《使用MVI打造响应式APP》原文**  
 
@@ -120,6 +121,8 @@ class MyActivity extends Activity implements MyView {
 
 **《使用MVI打造响应式APP》实战**  
 > * [实战：使用MVI打造响应式&函数式的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+
+---
 
 ## 关于我
 
