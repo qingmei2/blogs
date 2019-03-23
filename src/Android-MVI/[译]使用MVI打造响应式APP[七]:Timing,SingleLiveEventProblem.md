@@ -1,5 +1,3 @@
-# [译]使用MVI打造响应式APP(七):掌握时机(SingleLiveEvent问题)
-
 > 原文：[REACTIVE APPS WITH MODEL-VIEW-INTENT - PART7 - TIMING (SINGLELIVEEVENT PROBLEM)](http://hannesdorfmann.com/android/mosby3-mvi-7)  
 作者：[Hannes Dorfmann](http://hannesdorfmann.com)  
 译者：[却把清梅嗅](https://github.com/qingmei2)  
@@ -12,7 +10,8 @@
 
 通过下面的视频，你就能了解我在说什么：
 
-![](pic1)
+
+![](https://user-gold-cdn.xitu.io/2019/3/23/169a9ba3c413752f?w=274&h=498&f=gif&s=389582)
 
 这个示例显示了如何从 **CountriesRepository** 中加载国家的列表，当我们点击某个国家的条目时，程序将会跳转到第二个界面去展示“详情”（仅仅是国家的名称）。当我们返回到国家列表的界面时，我们希望和之前点击国家条目时的状态一致。
 
@@ -146,7 +145,7 @@ repositroy.reload().switchMap(repoState -> {
 
 OK, 现在你可以看到`MVI`中我们如何显示和隐藏`SnakeBar`：
 
-![](pic2)
+![](https://user-gold-cdn.xitu.io/2019/3/23/169a9bd5318c4252?w=274&h=498&f=gif&s=373839)
 
 请记住这并非像是`SingleLiveEvent`这样的解决方案。这是正确的状态管理，View只是显示或“渲染”给定的状态。因此用户如果再次从“国家详情”中返回，`Snackbar`不再会被展示，因为状态在 **CountriesViewState.pullToRefreshError = false** 时已经发生了改变。
 
@@ -174,14 +173,14 @@ repositroy.reload().switchMap(repoState -> {
   }
 ```
 
-![](pic3)
+![](https://user-gold-cdn.xitu.io/2019/3/23/169a9bdb1dea7875?w=406&h=720&f=gif&s=90051)
 
 使用`mergeWith()`，我们将计时器和滑动消失的`intent`组合成一个`observable`，然后使用`take(1)`仅将它们中的第一个事件进行发射。如果在计时器计时结束之前滑动`Snakebar`，则取消计时器，反之则取消滑动消失的`intent`。
 
 ## 结语
 现在让我们来尝试将UI搞乱，我们尝试下拉刷新、并在计时过程中手动取消`Snakebar`：
 
-![](pic4)
+![](https://user-gold-cdn.xitu.io/2019/3/23/169a9be0f68504a0?w=406&h=720&f=gif&s=90051)
 
 如你所见，无论我们如何尝试，都没有问题发生，由于 **单向数据流** 和 **业务逻辑驱动的状态**，`View`可以正确显示UI小部件（`View`层是无状态的，它从底层获取状态并只能对它进行展示）。比如，我们从未看到下拉刷新指示器和`Snakebar`同时显示（除了`Snackbar`退出过程中，两者的叠加情况）。
 
