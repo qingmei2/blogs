@@ -19,8 +19,6 @@
 
 重要的是，像`Presenter`这样的组件存活在`View`的生命周期之外，因为这样很容易处理`View`脱离和附着的事件。每当`View`（重新）依附到`Presenter`时，我们只需调用`view.render(previousState)`（因此Mosby内部使用了`BehaviorSubject`）。
 
-Actually, state can still be updated even if no view is attached because Presenter lives outside of that lifecycle and keeps RxJava state stream alive. Imagine receiving a push notification that changes data (part of state) while no view is attached. Again, whenever view gets reattached the latest state (containing updated data from push notification) is hand over to the view to render.
-
 这只是处理屏幕方向改变的一种处理方案，它同样适用于返回栈导航中。例如，`Fragment`在返回栈中，我们如果从返回栈中返回，我们可以简单的再次调用`view.render(previousState)`，并且，`view`也会显示正确的状态。
 
 事实上，即使没有`View`对其进行依附，状态也依然会被更新，因为`Presenter`存活在`View`的生命周期之外，并被保存在`RxJava`流中。设想如果没有`View`附着，则会收到一个更改数据（部分状态）的推送通知，同样，每当`View`重新附着时，最新状态（包含来自推送通知的更新数据）将被移交给`View`进行渲染。
