@@ -131,7 +131,7 @@ class HeaderSimpleAdapter : PagedListAdapter<Student, RecyclerView.ViewHolder>(d
 }    
 ```
 
-代码和注释已经将我的个人思想展示的很清楚了，我们固定一个`Header`在多类型列表的最上方，这也导致我们需要重写`getItemCount()`方法，并且在对`Item`进行渲染的`onBindViewHolder()`方法中，对`Sutdent`的获取进行额外的处理——因为多了一个Header，导致产生了数据源和列表的错位差，列表position = X时，需要取数据源第x-1个数据进行渲染。
+代码和注释已经将我的个人思想展示的很清楚了，我们固定一个`Header`在多类型列表的最上方，这也导致我们需要重写`getItemCount()`方法，并且在对`Item`进行渲染的`onBindViewHolder()`方法中，对`Sutdent`的获取进行额外的处理——因为多了一个Header，导致产生了数据源和列表的错位差—— **第n个数据被获取时，我们应该将其渲染在列表的第n+1个位置上**。
 
 我简单绘制了一张图来描述这个过程，也许更加直观易懂：
 
@@ -141,19 +141,167 @@ class HeaderSimpleAdapter : PagedListAdapter<Student, RecyclerView.ViewHolder>(d
 
 [gif2]
 
-**教学出现了事故**——Gif也许展示并不那么清晰，简单总结下，问题有两个：
+Gif也许展示并不那么清晰，简单总结下，问题有两个：
 
 * 1.在我们进行下拉刷新时，因为`Header`更应该是一个**静态独立的组件**，但实际上它也是列表的一部分，因此白光一闪，除了`Student`列表，`Header`作为`Item`也进行了刷新，这与我们的预期不符；
 * 2.下拉刷新之后，列表 **并未展示在最顶部**，而是滑动到了一个奇怪的位置。
 
 导致这两个问题的根本原因仍然是`Paging`计算列表的`position`时出现的问题:
 
-对于问题1，`Paging`对于列表的刷新理解为 **所有Item的刷新**，因此同样作为`Item`的`Header`也不能得到豁免；
+对于问题1，`Paging`对于列表的刷新理解为 **所有Item的刷新**，因此同样作为`Item`的`Header`也无法避免被刷新；
 
 问题2依然也是这个问题导致的，在`Paging`获取到第一页数据时（假设第一页数据只有10条），`Paging`会命令更新`position in 0..9`的`Item`,而实际上因为`Header`的关系，我们是期望它能够更新第`position in 1..10`的`Item`，最终导致了刷新以及对新数据的展示出现了问题。
 
 ## 3.面向Google编程
 
-正如标题而言，我尝试求助于`Google`，最终得到了这个链接中的解决方案：
+正如标题而言，我尝试求助于`Google`，最终找到了这个链接：
 
-[link1]()
+[PagingWithNetworkSample - PagedList RecyclerView scroll bug](https://github.com/googlesamples/android-architecture-components/issues/548)
+
+如果您简单研究过`PagedListAdapter`的源码的话，您应该了解，`PagedListAdapter`内部定义了一个`AsyncPagedListDiffer`，用于对列表数据的加载和展示，`PagedListAdapter`更像是一个空壳，所有分页相关的逻辑实际都 **委托** 给了`AsyncPagedListDiffer`:
+
+```Java
+public abstract class PagedListAdapter<T, VH extends RecyclerView.ViewHolder>
+        extends RecyclerView.Adapter<VH> {
+
+         final AsyncPagedListDiffer<T> mDiffer;
+
+         public void submitList(@Nullable PagedList<T> pagedList) {
+             mDiffer.submitList(pagedList);
+         }
+
+         protected T getItem(int position) {
+             return mDiffer.getItem(position);
+         }
+
+         public int getItemCount() {
+             return mDiffer.getItemCount();
+         }       
+
+         public PagedList<T> getCurrentList() {
+             return mDiffer.getCurrentList();
+         }
+}          
+```
+
+虽然`Paging`中数据的获取和展示我们是无法控制的，但我们可以尝试 **瞒过** `PagedListAdapter`,即使`Paging`得到了`position in 0..9`的`List<Data>`,但是我们让`PagedListAdapter`去更新`position in 1..10`的item不就可以了嘛？
+
+因此在上方的`Issue`链接中，**[onlymash](https://github.com/onlymash)** 同学提出了一个解决方案：
+
+**重写`PagedListAdapter`中被`AsyncPagedListDiffer`代理的所有方法，然后实例化一个新的`AsyncPagedListDiffer`，并让这个新的differ代理这些方法。**
+
+篇幅所限，我们只展示部分核心代码：
+
+```Kotlin
+class PostAdapter: PagedListAdapter<Any, RecyclerView.ViewHolder>() {
+
+    private val adapterCallback = AdapterListUpdateCallback(this)
+
+    // 当第n个数据被获取，更新第n+1个position
+    private val listUpdateCallback = object : ListUpdateCallback {
+        override fun onChanged(position: Int, count: Int, payload: Any?) {
+            adapterCallback.onChanged(position + 1, count, payload)
+        }
+
+        override fun onMoved(fromPosition: Int, toPosition: Int) {
+            adapterCallback.onMoved(fromPosition + 1, toPosition + 1)
+        }
+
+        override fun onInserted(position: Int, count: Int) {
+            adapterCallback.onInserted(position + 1, count)
+        }
+
+        override fun onRemoved(position: Int, count: Int) {
+            adapterCallback.onRemoved(position + 1, count)
+        }
+    }
+
+    // 新建一个differ
+    private val differ = AsyncPagedListDiffer<Any>(listUpdateCallback,
+        AsyncDifferConfig.Builder<Any>(POST_COMPARATOR).build())
+
+    // 将所有方法重写，并委托给新的differ去处理
+    override fun getItem(position: Int): Any? {
+        return differ.getItem(position - 1)
+    }
+
+    // 将所有方法重写，并委托给新的differ去处理
+    override fun submitList(pagedList: PagedList<Any>?) {
+        differ.submitList(pagedList)
+    }
+
+    // 将所有方法重写，并委托给新的differ去处理
+    override fun getCurrentList(): PagedList<Any>? {
+        return differ.currentList
+    }
+}
+```
+
+现在我们成功实现了上文中我们的思路，一图胜千言：
+
+[image2]
+
+## 4.对解决方案进行优化
+
+我们首先必须确认的一点是，上一小节的实现方案是完全可行的，但我个人认为美中不足的是，这种方案 **对既有的`Adapter`中代码改动过大**。
+
+我新建了一个`AdapterListUpdateCallback`、一个`ListUpdateCallback`以及一个新的`AsyncPagedListDiffer`,并重写了太多的`PagedListAdapter`的方法——我添加了数十行分页相关的代码，但这些代码和正常的列表展示并没有直接的关系。
+
+当然，我可以将这些逻辑都抽出来放在一个新的类里面，但我还是感觉我 **好像是模仿并重写了一个新的`PagedListAdapter`类一样**，那么是否还有其它的思路呢？
+
+最终我找到了这篇文章:
+
+[Android RecyclerView + Paging Library 添加头部刷新会自动滚动的问题分析及解决](https://blog.csdn.net/cekiasoo/article/details/81990475)
+
+这篇文章中的作者通过细致分析`Paging`的源码，得出了一个更简单实现`Header`的方案，有兴趣的同学可以点进去查看，这里简单阐述其原理：
+
+通过查看源码，以添加分页为例，**`Paging`对拿到最新的数据后，对列表的更新实际是调用了`RecyclerView.Adapter`的`notifyItemRangeInserted()`方法,而我们可以通过重写`Adapter.registerAdapterDataObserver()`方法，对数据更新的逻辑进行调整**：
+
+
+```Java
+// 1.新建一个 AdapterDataObserverProxy 类继承 RecyclerView.AdapterDataObserver
+class AdapterDataObserverProxy extends RecyclerView.AdapterDataObserver {
+    RecyclerView.AdapterDataObserver adapterDataObserver;
+    int headerCount;
+    public ArticleDataObserver(RecyclerView.AdapterDataObserver adapterDataObserver, int headerCount) {
+        this.adapterDataObserver = adapterDataObserver;
+        this.headerCount = headerCount;
+    }
+    @Override
+    public void onChanged() {
+        adapterDataObserver.onChanged();
+    }
+    @Override
+    public void onItemRangeChanged(int positionStart, int itemCount) {
+        adapterDataObserver.onItemRangeChanged(positionStart + headerCount, itemCount);
+    }
+    @Override
+    public void onItemRangeChanged(int positionStart, int itemCount, @Nullable Object payload) {
+        adapterDataObserver.onItemRangeChanged(positionStart + headerCount, itemCount, payload);
+    }
+
+    // 当第n个数据被获取，更新第n+1个position
+    @Override
+    public void onItemRangeInserted(int positionStart, int itemCount) {
+        adapterDataObserver.onItemRangeInserted(positionStart + headerCount, itemCount);
+    }
+    @Override
+    public void onItemRangeRemoved(int positionStart, int itemCount) {
+        adapterDataObserver.onItemRangeRemoved(positionStart + headerCount, itemCount);
+    }
+    @Override
+    public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+        super.onItemRangeMoved(fromPosition + headerCount, toPosition + headerCount, itemCount);
+    }
+}
+
+// 2.对于Adapter而言，仅需重写registerAdapterDataObserver()方法
+//   然后用 AdapterDataObserverProxy 去做代理即可
+class PostAdapter extends PagedListAdapter {
+
+    @Override
+    public void registerAdapterDataObserver(@NonNull RecyclerView.AdapterDataObserver observer) {
+        super.registerAdapterDataObserver(new AdapterDataObserverProxy(observer, getHeaderCount()));
+    }
+}
+```
