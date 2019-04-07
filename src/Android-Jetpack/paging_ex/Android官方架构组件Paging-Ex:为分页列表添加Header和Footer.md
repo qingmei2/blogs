@@ -1,10 +1,21 @@
 # Android官方架构组件Paging-Ex:为分页列表添加Header和Footer
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://www.jianshu.com/p/550a8bd71214)
+>* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://www.jianshu.com/p/da0d6af8ffed)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)  
+>* [Android官方架构组件DataBinding-Ex: 观察者模式的殊途同归](https://www.jianshu.com/p/e8b6ba90de53)  
 
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
 ## 概述
 
 `Paging`是`Google`在2018年I/O大会上推出的适用于`Android`原生开发的分页库，如果您还不是很了解这个 **官方钦定** 的分页架构组件，欢迎参考笔者的这篇文章：
 
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
+[Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
 
 笔者在实际项目中已经使用`Paging`半年有余，和市面上其它热门的分页库相比，`Paging`最大的亮点在于其 **将列表分页加载的逻辑作为回调函数封装入 `DataSource` 中**，开发者在配置完成后，无需控制分页的加载，列表会 **自动加载** 下一页数据并展示。
 
@@ -18,7 +29,7 @@
 
 在正式开始本文内容之前，我们先来看看最终的实现效果，我们为一个`Student`的分页列表添加了一个`Header`和`Footer`：
 
-[gif1]
+![](https://upload-images.jianshu.io/upload_images/7293029-e62bba8de00f7732.gif?imageMogr2/auto-orient/strip)
 
 实现这种效果，笔者最初的思路也是通过 **多类型列表** 实现`Header`和`Footer`，但是很快我们就遇到了第一个问题，那就是 **我们并没有直接持有数据源**。
 
@@ -26,7 +37,7 @@
 
 对于常规的多类型列表而言，我们可以轻易的持有`List<ItemData>`，从数据的控制而言，我更倾向于用一个代表`Header`或者`Footer`的占位符插入到数据列表的顶部或者底部，这样对于`RecyclerView`的渲染而言，它是这样的：
 
-[image1]
+![](https://upload-images.jianshu.io/upload_images/7293029-47fe0ab4d14cf4c4.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 正如我所标注的，`List<ItemData>`中一个`ItemData`对应了一个`ItemView`——我认为为一个`Header`或者`Footer`单独创建对应一个`Model`类型是完全值得的，它极大增强了代码的可读性，而且对于复杂的`Header`而言，代表状态的`Model`类也更容易让开发者对其进行渲染。
 
@@ -135,11 +146,12 @@ class HeaderSimpleAdapter : PagedListAdapter<Student, RecyclerView.ViewHolder>(d
 
 我简单绘制了一张图来描述这个过程，也许更加直观易懂：
 
-[image2]
+![](https://upload-images.jianshu.io/upload_images/7293029-207db0e9669e2b83.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 代码写完后，直觉告诉我似乎没有什么问题，让我们来看看实际的运行效果：
 
-[gif2]
+![](https://upload-images.jianshu.io/upload_images/7293029-ac3bc397a73f1100.gif?imageMogr2/auto-orient/strip)
+
 
 Gif也许展示并不那么清晰，简单总结下，问题有两个：
 
@@ -152,9 +164,9 @@ Gif也许展示并不那么清晰，简单总结下，问题有两个：
 
 问题2依然也是这个问题导致的，在`Paging`获取到第一页数据时（假设第一页数据只有10条），`Paging`会命令更新`position in 0..9`的`Item`,而实际上因为`Header`的关系，我们是期望它能够更新第`position in 1..10`的`Item`，最终导致了刷新以及对新数据的展示出现了问题。
 
-## 3.面向Google编程
+## 3.向Google和Github寻求答案
 
-正如标题而言，我尝试求助于`Google`，最终找到了这个链接：
+正如标题而言，我尝试求助于`Google`和`Github`，最终找到了这个链接：
 
 [PagingWithNetworkSample - PagedList RecyclerView scroll bug](https://github.com/googlesamples/android-architecture-components/issues/548)
 
@@ -239,11 +251,11 @@ class PostAdapter: PagedListAdapter<Any, RecyclerView.ViewHolder>() {
 
 现在我们成功实现了上文中我们的思路，一图胜千言：
 
-[image2]
+![](https://upload-images.jianshu.io/upload_images/7293029-207db0e9669e2b83.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-## 4.对解决方案进行优化
+## 4.另外一种实现方式
 
-我们首先必须确认的一点是，上一小节的实现方案是完全可行的，但我个人认为美中不足的是，这种方案 **对既有的`Adapter`中代码改动过大**。
+上一小节的实现方案是完全可行的，但我个人认为美中不足的是，这种方案 **对既有的`Adapter`中代码改动过大**。
 
 我新建了一个`AdapterListUpdateCallback`、一个`ListUpdateCallback`以及一个新的`AsyncPagedListDiffer`,并重写了太多的`PagedListAdapter`的方法——我添加了数十行分页相关的代码，但这些代码和正常的列表展示并没有直接的关系。
 
@@ -305,3 +317,94 @@ class PostAdapter extends PagedListAdapter {
     }
 }
 ```
+
+我们将额外的逻辑抽了出来作为一个新的类，思路和上一小节的十分相似，同样我们也得到了预期的结果。
+
+经过对源码的追踪，从性能上来讲，这两种实现方式并没有什么不同，唯一的区别就是，前者是针对`PagedListAdapter`进行了重写，将`Item`更新的代码交给了`AsyncPagedListDiffer`;而这种方式中，`AsyncPagedListDiffer`内部对`Item`更新的逻辑，最终仍然是交给了`RecyclerView.Adapter`的`notifyItemRangeInserted()`方法去执行的——**两者本质上并无区别**。
+
+## 5.最终的解决方案
+
+虽然上文只阐述了`Paging library`如何实现`Header`，实际上对于`Footer`而言也是一样，因为`Footer`也可以被视为另外一种的`Item`；同时，因为`Footer`在列表底部，并不会影响`position`的更新，因此它更简单。
+
+下面是完整的`Adapter`示例：
+
+```kotlin
+class HeaderProxyAdapter : PagedListAdapter<Student, RecyclerView.ViewHolder>(diffCallback) {
+
+    override fun getItemViewType(position: Int): Int {
+        return when (position) {
+            0 -> ITEM_TYPE_HEADER
+            itemCount - 1 -> ITEM_TYPE_FOOTER
+            else -> super.getItemViewType(position)
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            ITEM_TYPE_HEADER -> HeaderViewHolder(parent)
+            ITEM_TYPE_FOOTER -> FooterViewHolder(parent)
+            else -> StudentViewHolder(parent)
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+            is HeaderViewHolder -> holder.bindsHeader()
+            is FooterViewHolder -> holder.bindsFooter()
+            is StudentViewHolder -> holder.bindTo(getStudentItem(position))
+        }
+    }
+
+    private fun getStudentItem(position: Int): Student? {
+        return getItem(position - 1)
+    }
+
+    override fun getItemCount(): Int {
+        return super.getItemCount() + 2
+    }
+
+    override fun registerAdapterDataObserver(observer: RecyclerView.AdapterDataObserver) {
+        super.registerAdapterDataObserver(AdapterDataObserverProxy(observer, 1))
+    }
+
+    companion object {
+        private val diffCallback = object : DiffUtil.ItemCallback<Student>() {
+            override fun areItemsTheSame(oldItem: Student, newItem: Student): Boolean =
+                    oldItem.id == newItem.id
+
+            override fun areContentsTheSame(oldItem: Student, newItem: Student): Boolean =
+                    oldItem == newItem
+        }
+
+        private const val ITEM_TYPE_HEADER = 99
+        private const val ITEM_TYPE_FOOTER = 100
+    }
+}
+```
+如果你想查看运行完整的demo，这里是本文sample的地址：
+
+> https://github.com/qingmei2/SamplePaging
+
+## 6.更多优化点？
+
+文末最终的方案是否有更多优化的空间呢？当然，在实际的项目中，对其进行简单的封装是更有意义的（比如`Builder`模式、封装一个`Header`、`Footer`甚至两者都有的装饰器类、或者其它...）。
+
+本文旨在描述Paging使用过程中 **遇到的问题** 和 **解决问题的过程**，因此项目级别的封装和实现细节不作为本文的主要内容；关于`Header`和`Footer`在`Paging`中的实现方式，如果您有更好的解决方案，期待与您的共同探讨。
+
+## 参考&感谢
+
+* Paging library 源码
+* [Android RecyclerView + Paging Library 添加头部刷新会自动滚动的问题分析及解决](https://blog.csdn.net/cekiasoo/article/details/81990475)
+* [PagingWithNetworkSample - PagedList RecyclerView scroll bug](https://github.com/googlesamples/android-architecture-components/issues/548)
+
+---
+
+## 关于我
+
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[博客](https://www.jianshu.com/u/df76f81fe3ff)或者[Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
