@@ -11,8 +11,9 @@
 >* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
 >* [Android官方架构组件LiveData: 观察者模式领域二三事](https://www.jianshu.com/p/550a8bd71214)
 >* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
+>* [Android官方架构组件Paging-Ex:为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
 >* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)  
->* [Android官方架构组件DataBinding双向绑定篇: 观察者模式的殊途同归](https://www.jianshu.com/p/e8b6ba90de53)
+>* [Android官方架构组件DataBinding-Ex: 双向绑定原理解析](https://www.jianshu.com/p/e8b6ba90de53)
 
 #### 1.2 实战篇
 >* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
@@ -59,7 +60,6 @@
 
 ### 4.MVI系列
 
-**《使用MVI打造响应式APP》译文**  
 > * [[译]使用MVI打造响应式APP(一):Model到底是什么](https://github.com/qingmei2/android-programming-profile/blob/master/src/Android-MVI/%5B%E8%AF%91%5D%E4%BD%BF%E7%94%A8MVI%E6%89%93%E9%80%A0%E5%93%8D%E5%BA%94%E5%BC%8FAPP%5B%E4%B8%80%5D%3AModel%E5%B1%82%E5%88%B0%E5%BA%95%E4%BB%A3%E8%A1%A8%E4%BB%80%E4%B9%88.md)  
 > * [[译]使用MVI打造响应式APP[二]:View层和Intent层](https://github.com/qingmei2/android-programming-profile/blob/master/src/Android-MVI/%5B%E8%AF%91%5D%E4%BD%BF%E7%94%A8MVI%E6%89%93%E9%80%A0%E5%93%8D%E5%BA%94%E5%BC%8FAPP%5B%E4%BA%8C%5D%3AView%E5%B1%82%E5%92%8CIntent%E5%B1%82.md)  
 > * [[译]使用MVI打造响应式APP[三]:状态折叠器](https://github.com/qingmei2/android-programming-profile/blob/master/src/Android-MVI/%5B%E8%AF%91%5D%E4%BD%BF%E7%94%A8MVI%E6%89%93%E9%80%A0%E5%93%8D%E5%BA%94%E5%BC%8FAPP%5B%E4%B8%89%5D%3AStateReducer.md)  
@@ -83,8 +83,7 @@
 * **Github:** https://github.com/qingmei2  
 * **CSDN:**   https://blog.csdn.net/mq2553299  
 * **掘金:**   https://juejin.im/user/588555ff1b69e600591e8462  
-* **简书:**    https://www.jianshu.com/u/df76f81fe3ff   
-* **慕课网:**  https://www.imooc.com/u/6936865
+* **简书:**    https://www.jianshu.com/u/df76f81fe3ff
 * **Email:**  mq2553299@qq.com  
 * **WeChat:** mq2553299
 
