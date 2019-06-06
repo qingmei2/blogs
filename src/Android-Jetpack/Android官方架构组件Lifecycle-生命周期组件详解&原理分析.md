@@ -1,19 +1,8 @@
-> **争取打造 Android Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)
->* [实战：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
-
 ## 概述
 
 在过去的谷歌IO大会上，Google官方向我们推出了 [Android Architecture Components](https://developer.android.com/topic/libraries/architecture/index.html),其中谈到Android组件处理生命周期的问题，向我们介绍了 [Handling Lifecycles](https://developer.android.com/topic/libraries/architecture/lifecycle.html)。
 
 同时，如何利用 `android.arch.lifecycle` 包提供的类来控制数据、监听器等的 lifecycle。同时，[LiveData](https://developer.android.com/topic/libraries/architecture/livedata.html) 与 [ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel.html) 的 lifecycle 也依赖于 **Lifecycle** 框架。
-
-经过公司内部的技术交流小组的探讨后，不少小伙伴觉得这个框架本身尚未成熟（当时的 [Android Architecture Components](https://developer.android.com/topic/libraries/architecture/index.html)组件还处于Alpha版本），再加上本身并没有足够的说服力让我们抛弃RxJava+RxAndroid全家桶转身投奔[LiveData](https://developer.android.com/topic/libraries/architecture/livedata.html) ，而[Room](https://developer.android.com/topic/libraries/architecture/room.html) 这个数据库框架本身也有很多同样优秀的三方库可以替代，因此我渐渐把这个框架的学习计划搁置了。
-
-不久前， [Android Architecture Components](https://developer.android.com/topic/libraries/architecture/index.html) 正式Release， [Lifecycle](https://developer.android.com/topic/libraries/architecture/lifecycle.html)也正式植入进了SupportActivity（AppCompatActivity的基类）和Fragment中，我觉得还是有必要去尝试学习google的这个框架，不管有没有用到，我相信其本身的设计思想也会对我有很大的帮助。
 
 ## 一、Lifecycle简介&基础使用
 
@@ -77,7 +66,7 @@ public interface IPresenter extends LifecycleObserver {
 }
 
 public class BasePresenter implements IPresenter {
-        
+
     private static final String TAG = "com.qingmei2.module.base.BasePresenter";    
 
     @Override
@@ -176,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 
 借鉴[Android 架构组件（一）——Lifecycle](http://blog.csdn.net/zhuzp_blog/article/details/78871374), [@ShymanZhu](http://blog.csdn.net/sd_zhuzhipeng)的一张图进行简单的概括：
 
-![Lifecycle组件原理](http://upload-images.jianshu.io/upload_images/7293029-e8b3a15d2ed0a6ee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/lifecycle/image.iuse5pgt38.png)
 
 我们先将重要的这些类挑选出来：
 
@@ -192,13 +181,13 @@ public class MainActivity extends AppCompatActivity {
 
 了解了这些类和接口的职责，接下来原理分析就简单很多了，我们以Fragment为例，来看下实际Fragment等类和上述类或接口的联系：
 
-### 1、Fragment：LifecycleOwner 
+### 1、Fragment：LifecycleOwner
 
 * **Fragment**(Activity同理，我们 本文以Fragment为例，下同)：实现了LifecycleOwner接口，这意味着Fragment对象持有生命周期对象（Lifecycle），并可以通过Lifecycle getLifecycle()方法获取内部的Lifecycle对象：
 
 ```Java
 public class Fragment implements xxx, LifecycleOwner {
-    
+
     //...省略其他
 
    LifecycleRegistry mLifecycleRegistry = new LifecycleRegistry(this);
@@ -266,8 +255,7 @@ public class Fragment implements xxx, LifecycleOwner {
 
 参照[Android 架构组件（一）——Lifecycle](http://blog.csdn.net/zhuzp_blog/article/details/78871374), [@ShymanZhu](http://blog.csdn.net/sd_zhuzhipeng)文中的时序图：
 
-![Lifecycle 在Fragment中的时序图](http://upload-images.jianshu.io/upload_images/7293029-a125ace9440970e6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/lifecycle/image.0kvug9qm01qj.png)
 
 我们从图中可以看到，当Fragment将生命周期对应的事件交给其内部的Lifecycle处理后， **LifecycleObserver** （就是我们上文自定义的Presenter），就能够接收到对应的生命周期事件，这是如何实现的呢？
 
@@ -286,7 +274,7 @@ public abstract class Lifecycle {
 
         //注册LifecycleObserver （比如Presenter）
         public abstract void addObserver(@NonNull LifecycleObserver observer);
-        //移除LifecycleObserver 
+        //移除LifecycleObserver
         public abstract void removeObserver(@NonNull LifecycleObserver observer);
         //获取当前状态
         public abstract State getCurrentState();
@@ -300,7 +288,7 @@ public abstract class Lifecycle {
             ON_DESTROY,
             ON_ANY
         }
-        
+
        public enum State {
             DESTROYED,
             INITIALIZED,
@@ -331,7 +319,7 @@ Lifecycle没什么要讲的，几个抽象方法也能看懂，作为Lifecycle�
 
 ## 一些小Tips
 
-#### 1、尝试复用LifecycleRegistry 
+#### 1、尝试复用LifecycleRegistry
 
 首先，LifecycleRegistry 本身就是一个成熟的 **Lifecycle** 实现类，它被实例化在Activity和Fragment中使用，如果我们需要自定义LifecycleOwner 并实现接口需要返回一个Lifecycle实例，完全可以直接在自定义LifecycleOwner中new一个LifecycleRegistry成员并返回它（简而言之就是：直接拿来用即可）。
 
@@ -396,3 +384,34 @@ Lifecycle没什么要讲的，几个抽象方法也能看懂，作为Lifecycle�
 [Lifecycle-aware Components 源码分析 @chaosleong](http://chaosleong.github.io/2017/05/27/How-Lifecycle-aware-Components-actually-works/)
 
 [Android 架构组件（一）——Lifecycle @ShymanZhu](http://blog.csdn.net/zhuzp_blog/article/details/78871374)
+
+**--------------------------广告分割线------------------------------**
+
+## 系列文章
+
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
+
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
+## 关于我
+
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
