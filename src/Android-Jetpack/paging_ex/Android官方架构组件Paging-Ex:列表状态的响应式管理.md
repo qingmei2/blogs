@@ -1,4 +1,4 @@
-# Android官方架构组件Paging-Ex:列表状态的响应式管理
+>  **本文已授权「玉刚说」微信公众号独家发布**
 
 ## 概述
 
@@ -16,17 +16,17 @@
 
 这种便利意味着开发者不需要自己持有 **数据源** ，大多数时候这使得开发流程更加便利，但总有偶然，比如这样一个界面：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae54718a4d3e31?w=310&h=552&f=gif&s=285159)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/1.lvuyq8lwlyp.gif)
 
 这种需求屡见不鲜，其本质是，列表本身展示服务端返回的列表数据之外，还需要 **本地控制额外的状态**。
 
 什么叫 **额外的状态** ? 我们先用简单的一张图展示没有额外状态的情形，这时，列表的所有UI元素都从服务端获取：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae54747b175882?w=1316&h=746&f=png&s=253162)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.bkcjbsiq9b6.png)
 
 现在我们将上文`Gif`中的点赞效果也通过一张图表示：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae5477fd0eed3f?w=1420&h=728&f=png&s=116860)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.1994ir2uyn8.png)
 
 读者可能还未认识到两种业务场景之间的差异性：对于列表的初始化来讲，所有UI元素都被服务端返回的数据渲染，每条评论是否已经被点赞，服务端都通过`Comment`进行了描述。
 
@@ -96,13 +96,13 @@ class CommentPagedAdapter(
 
 以列表的渲染为例，让我们来看看项目之前的结构：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae547d4dae75bb?w=1340&h=762&f=png&s=86917)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.chn5qnhpz4t.png)
 
 回到本文，对于`Paging`来讲，我们并无法直接获取数据源，因此对于列表状态的管理，我们需要额外的角色帮助，那就是本地的持久化缓存。
 
 让我们看看添加了持久层之后的结构：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae54808194a3a1?w=1562&h=848&f=png&s=126258)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.qtmxjksba9.png)
 
 添加了缓存之后，每当我们尝试初始化一个分页列表，框架会从服务器拉取数据，之后数据被存储到了`Room`中。
 
@@ -122,7 +122,7 @@ class CommentPagedAdapter(
 
 让我们来看看加入了持久层之后，下拉刷新的逻辑发生了怎样的变化：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae548519b3c7b7?w=1512&h=992&f=png&s=170628)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.ukynnai7mab.png)
 
 * 1.下拉刷新意味着我们需要重置数据，因此我们手动清除了数据库内对应表中的数据；  
 * 2.当表中数据被清空时，`Paging`会自动响应到数据的变化，因为没有了数据，所以`Paging`会自动向服务器请求数据；  
@@ -144,7 +144,7 @@ fun swipeRefresh() {
 
 现在我们将整个流程中，`Paging`自动执行的步骤用紫色标记出来：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae54882e5084eb?w=1548&h=930&f=png&s=175943)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.5x125xqmmvp.png)
 
 瞧，除了我们手动执行的逻辑，所有流程都交给了`Paging`去 **响应式** 地执行。
 
@@ -156,7 +156,7 @@ fun swipeRefresh() {
 
 答案呼之欲出, 我们依然用熟悉的流程图表示代码的执行步骤：
 
-![](https://user-gold-cdn.xitu.io/2019/5/23/16ae548e84c870ad?w=1496&h=928&f=png&s=160533)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/ex2-state/image.wbm75ah4osa.png)
 
 即使是复杂的状态，在这种模式下也不再是难题：首先，我们将数据库对应表中对应评论的`isLike`（是否被点赞）设置为`true`：
 
