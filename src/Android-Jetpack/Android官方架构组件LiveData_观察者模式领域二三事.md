@@ -1,18 +1,5 @@
 
-本文是 [《Android Jetpack 官方架构组件》](https://blog.csdn.net/mq2553299/column/info/24151) 系列的最后一篇文章，和一些朋友的观点不同的是，我认为它是 **最重要** 的核心组件，因为 `LiveData`本身很简单，但其代表却正是 **MVVM** 模式最重要的思想，即 **数据驱动视图**（也有叫观察者模式、响应式等）——这也是摆脱 **顺序性编程思维** 的重要一步。
-
-本文默认读者已经学习了 **Lifecycle**  , 欢迎关注笔者的Jetpack系列：
-
->  **争取打造 AndroidLi Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件LiveData: 观察者模式领域二三事](https://www.jianshu.com/p/550a8bd71214)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)  
-
-> **Android Jetpack 实战篇**：
->* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
->* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
+本文是 [《Android Jetpack 官方架构组件》](https://blog.csdn.net/mq2553299/column/info/24151) 系列文章, `LiveData`本身很简单，但其代表却正是 **MVVM** 模式最重要的思想，即 **数据驱动视图**（也有叫观察者模式、响应式等）——这也是摆脱 **顺序性编程思维** 的重要一步。
 
 ### 回顾LiveData：从处境尴尬到咸鱼翻身
 
@@ -30,7 +17,7 @@
 
 讨论这个问题之前，我们先看看 `LiveData` 的用法，这实在没什么技术难度，比如，你可以这样实例化一个`LiveData`并使用它：
 
-![为了保证代码简洁可读，示例代码我使用了Kotlin](https://upload-images.jianshu.io/upload_images/7293029-7a3648acd36fd8d9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.1kxygxohmxf.png)
 
 如你所见，`LiveData`实际上就像一个 **容器**, 本文中它存储了一个`String`类型的引用，每当这个容器内 `String`的数据发生变化，我们都能在回调函数中进行对应的处理，比如 **Toast**。
 
@@ -50,7 +37,7 @@
 
 让我们来看看`LiveData`被订阅时内部的代码：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-17d1a94464d77842.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.kubxvij5yjf.png)
 
 源码中的逻辑非常复杂，我们只关注核心代码：
 
@@ -60,7 +47,7 @@
 
 * 2.方法内部实际上将我们传入的2个参数包装成了一个新的 `LifecycleBoundObserver`对象，它实现了 **Lifecycle** 组件中的`LifecycleObserver`接口:
 
-![](https://upload-images.jianshu.io/upload_images/7293029-7de0a52d619e6faf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.png)
 
 这里就解释了为什么`LiveData`能够 **自动解除订阅而避免内存泄漏**  了，因为它内部能够感应到`Activity`或者`Fragment`的生命周期。
 
@@ -78,7 +65,7 @@
 
 **柿子挑软的捏**，我们先看`setValue()`方法的实现原理：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-74c6e7a696797624.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.8m5gilan167.png)
 
 通过保留最终的核心代码，我们很清晰了解了`setValue()`方法为什么能更新`LiveData`的值，并且通知到回调函数中的代码去执行，比如更新UI。
 
@@ -86,7 +73,7 @@
 
 其实答案已经呼之欲出了，就是通过 `Handler`：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-6b954b58ac4c80cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.ppvbb83haq.png)
 
 **现在你已经对`LiveData`整体了一个基本的了解了**，接下来让我们开始去探究更细节的闪光点。
 
@@ -96,11 +83,11 @@
 
 让我们来看一道题目：在下述Activity完整的生命周期中，`Activity`一共观察到了几次数据的变更——即 **一共打印了几条Log** ？（补充纠正，onStop()方法中值应该为 "onStop"）
 
-![](https://upload-images.jianshu.io/upload_images/7293029-fdd5f8bdfd312795.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.zckzjh1y2v.png)
 
 公布答案：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-b4dfbe14343002d0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.7hm7m3id17t.png)
 
 意外的是，`livedata.observer()`的本次观察并没有观察到 **onCreate**、**onStop** 和 **onDestroy** 的数据变更。
 
@@ -108,7 +95,7 @@
 
 还记得上文提到过2次的 **LiveData的活跃状态(Active)** 相关代码吗？实际上，`LiveData`内部存储的每一个`LifecycleBoundObserver`本身都有`shouldBeActive`的状态：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-fcacf53831ee49bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.tv8ns7jh81r.png)
 
 现在我们明白了，原来并不是只要在`onDestroy()`之前为`LiveData`进行更新操作，`LiveData`的观察者就能响应到对应的事件的。
 
@@ -120,11 +107,11 @@
 
 当然，有同学提出，我如果希望这种情况下，`Activity`在后台依然能够响应数据的变更，可不可以呢？当然可以，`LiveData`此外还提供了`observerForever()`方法，在这种情况下，它能够响应到任何生命周期中数据的变更事件：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-10eb57c69097d8c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.i8ed4czamxi.png)
 
 除此之外，源码中处处都是优秀的细节，比如对于`observe()`方法和`observerForever()`方法对应生成的包装类，后者方法生成的是`AlwaysActiveObserver`对象，统一抽象为`ObserverWrapper`。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-672cb362278ea5ff.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.2lksnjk02ma.png)
 
 这种即使只有2种不同场景，也通过代码的设计，将公共业务进行向上抽离为抽象类的严谨，也非常值得我们学习。
 
@@ -136,7 +123,7 @@ https://developer.android.com/reference/android/arch/lifecycle/LiveDataReactiveS
 
 值得玩味的是，官方的工具类中，`LiveData`向`RxJava`的转换方法，返回值并非是一个`Flowable`，而是一个`Publisher`接口：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-3bbb4282701b1118.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/livedata/image.lspnuhitjc.png)
 
 正如我在注释中标注的，这个工具方法返回的是一个接口，很大程度上限制了我们对`RxJava`众多强大操作符的使用，**这是否是来自Google的恶意**？
 
@@ -146,9 +133,28 @@ https://developer.android.com/reference/android/arch/lifecycle/LiveDataReactiveS
 
 **--------------------------广告分割线------------------------------**
 
+## 系列文章
+
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
+
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
 ## 关于我
 
-Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[博客](https://www.jianshu.com/u/df76f81fe3ff)或者[Github](https://github.com/qingmei2)。
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
 
 如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
 

@@ -1,10 +1,3 @@
-> **争取打造 Android Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)
->* [实战：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
-
 ## 概述
 
 2017年的Google I/O大会上，Google推出了一系列譬如 [Lifecycle、ViewModel、LiveData](https://developer.android.com/jetpack/)等一系列 **更适合用于MVVM模式开发** 的架构组件。
@@ -23,7 +16,7 @@
 
 每当`String`的数据状态发生变更，View层就能检测并自动执行UI的更新，同理，每当列表的数据源`List<T>`发生变更，`RecyclerView`也会自动刷新列表：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-e4348b6105246adc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://github.com/qingmei2/qingmei2-blogs-art/blob/master/android/jetpack/viewModel/image1/image.4u7rkd6aqe8.png?raw=true)
 
 
 对于开发者来讲，在开发过程中可以大幅减少UI层和Model层相互调用的代码，转而将**更多的重心投入到业务代码的编写**。
@@ -68,7 +61,7 @@ MVVM模式并不一定依赖于`DataBinding`，但是除了`DataBinding`，开�
 比如，有的开发者，将 **ViewModel** 层像 **MVP** 一样定义为一个接口：
 
 ```kotlin
-interface IViewModel 
+interface IViewModel
 
 open class BaseViewModel: IViewModel
 ```
@@ -116,7 +109,7 @@ public class CommentViewModel extends BaseObservable {
 
 `ViewModel`的扩展类则会在这种情况下自动保留其数据，如果`Activity`被重新创建了，它会收到被之前相同`ViewModel`实例。当所属`Activity`终止后，框架调用`ViewModel`的`onCleared()`方法释放对应资源：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-0b71443385ac3bdc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://github.com/qingmei2/qingmei2-blogs-art/blob/master/android/jetpack/viewModel/image.i28ly3qq5y8.png?raw=true)
 
 这样看来，`ViewModel`是有一定的 **作用域** 的，它不会在指定的作用域内生成更多的实例，从而节省了更多关于 **状态维护**（数据的存储、序列化和反序列化）的代码。
 
@@ -205,7 +198,7 @@ public abstract class ViewModel {
 public class HolderFragment extends Fragment {
 
      public HolderFragment() { setRetainInstance(true); }
-    
+
       private ViewModel mViewModel;
       // getter、setter...
 }
@@ -293,12 +286,12 @@ public class BFragment extends Fragment {
 public <T extends ViewModel> T get(Class<T> modelClass) {
       // 先从ViewModelStore容器中去找是否存在ViewModel的实例
       ViewModel viewModel = mViewModelStore.get(key);
-     
+
       // 若ViewModel已经存在，就直接返回
       if (modelClass.isInstance(viewModel)) {
             return (T) viewModel;
       }
-       
+
       // 若不存在，再通过反射的方式实例化ViewModel，并存储进ViewModelStore
       viewModel = modelClass.getConstructor(Application.class).newInstance(mApplication);
       mViewModelStore.put(key, viewModel);
@@ -322,8 +315,31 @@ CommonViewModel viewModel = ViewModelProviders.of(activity).get(CommonViewModel.
 
 **--------------------------广告分割线------------------------------**
 
+## 系列文章
+
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
+
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
 ## 关于我
 
-Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[博客](https://www.jianshu.com/u/df76f81fe3ff)或者[Github](https://github.com/qingmei2)。
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
 
 如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)

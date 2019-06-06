@@ -1,20 +1,6 @@
->  **争取打造 Android Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件LiveData: 观察者模式领域二三事](https://www.jianshu.com/p/550a8bd71214)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)  
->* [Android官方架构组件DataBinding双向绑定篇: 观察者模式的殊途同归](https://www.jianshu.com/p/e8b6ba90de53)  
-
-> **Android Jetpack 实战篇**：
->* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
->* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
-
 ## 前言
 
 本文是 [Android官方架构组件](https://blog.csdn.net/mq2553299/column/info/24151) 系列的番外篇，因为目前国内关于`DataBinding`双向绑定的博客，讲的实在是五花八门，很多文章看完之后仍然一头雾水，特此专门写一篇文章进行总结。
-
-此外，前几天在CSDN上看到 [貌似掉线](https://me.csdn.net/maosidiaoxian) 老师发布了一篇文章[《我为什么放弃在项目中使用Data Binding》](https://blog.csdn.net/maosidiaoxian/article/details/85560206)，里面针对性指出了目前`DataBinding`的使用中一些痛点，很多地方我感同身受，但鉴于 **事物的存在必然存在两面性** ，特此也在 **本文的末尾** 写了一些我个人的理解， 阐述了为什么我个人 **还在坚持使用DataBinding** ,  希望对读者能有所裨益。
 
 本文默认读者对`DataBinding`的使用有了初步的了解。
 
@@ -28,23 +14,23 @@
 
 比如说，对于一个`TextView`的内容展示，一般情况下，我们只是用来通过将一个`String`类型的数据对其进行渲染：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-1d5bf1d23a910117.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.5r9n5a1goe5.png)
 
 显而易见，**数据的流向是单向的**，换句话说，我们认为`TextView`对`DataSource`只进行了 **读** 操作——如果此时进行了网络请求，我们需要用到`DataSource`某个属性作为参数，我们依然可以毫无顾忌从`DataSource`取值。
 
 但是换一个场景，如果我们把`TextView`换成一个`EditText`，接下来我们需要面对的则截然不同，比如登录界面：
-![](https://upload-images.jianshu.io/upload_images/7293029-768960691be5029a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.mpn40f3ori.png)
 
 这似乎没有什么问题，我们依然通过一个`LiveData`对`EditText`进行了单向绑定：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-79ec5044aad6fbc2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.ftx2c3o6ade.png)
 
 
 问题发生了，当我们对 **输入框** 进行编辑，`EditText`的UI发生了变更，但是`LiveData`内的数据却没有更新，当我们想要在`ViewModel`层请求登录的API接口时，我们就必须要去通过`editText.getText()`才能获取用户输入的密码。
 
 于是我们希望，即使是`EditText`的内容发生了变更，但是`LiveData`内的数据也能和`EditText`保持内容的同步——这样我们就不需要让`ViewModel`层持有`View`层的引用，在请求接口时，直接从`LiveData`中取值即可：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-a7c5af7d00eb04e0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.z5acjk34xt.png)
 
 这就是双向绑定的意义。
 
@@ -58,29 +44,29 @@
 
 显然上文中的`EditText`的是 **双向绑定** 经典的使用场景之一，此外，双向绑定的使用场景非常常见，比如`CheckBox`：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-04cc4e82951a13d9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.mzaa1ezojc9.png)
 
 当用户选中了`CheckBox`，我们当然希望`ViewModel`层的`LiveData<Boolean>`状态进行对应的更新，以便将来我们直接从`LiveData`中取值作为参数进行网络请求。
 
 而如果没有双向绑定，用户操作了UI，我们就需要 **手动添加代码保证状态的同步**——比如`checkBox.setOnCheckChangedListener()`，否则，就会在接下来的操作中得到与预期不同的结果。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-17d4f982549dfc91.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.m3az3aq3zsp.png)
 
 
 ## 听起来好像很麻烦，那么究竟如何使用呢？
 
 幸运的是，Android原生控件中，绝大多数的双向绑定使用场景，`DataBinding`都已经帮我们实现好了：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-a925129a8688ce08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/databinding/ex1/image.fys33zgfk07.png)
 
 这意味着我们并不需要去手动实现复杂的双向绑定，以上文的`EditText`为例，我们只需要通过`@={表达式}`进行双向的绑定：
 
 ```xml
 <EditText
-android:id="@+id/etPassword"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:text="@={ fragment.viewModel.password }" />
+	android:id="@+id/etPassword"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:text="@={ fragment.viewModel.password }" />
 ```
 
 相比单向绑定，只需要多一个`=`符号，就能保证`View`层和`ViewModel`层的 **状态同步** 了。
@@ -94,38 +80,38 @@ android:text="@={ fragment.viewModel.password }" />
 ```Kotlin
 object SwipeRefreshLayoutBinding {
 
-@JvmStatic
-@BindingAdapter("app:bind_swipeRefreshLayout_refreshing")
-fun setSwipeRefreshLayoutRefreshing(
-swipeRefreshLayout: SwipeRefreshLayout,
-newValue: Boolean
-) {
-if (swipeRefreshLayout.isRefreshing != newValue)
-swipeRefreshLayout.isRefreshing = newValue
-}
+    @JvmStatic
+    @BindingAdapter("app:bind_swipeRefreshLayout_refreshing")
+    fun setSwipeRefreshLayoutRefreshing(
+            swipeRefreshLayout: SwipeRefreshLayout,
+            newValue: Boolean
+    ) {
+        if (swipeRefreshLayout.isRefreshing != newValue)
+            swipeRefreshLayout.isRefreshing = newValue
+    }
 
-@JvmStatic
-@InverseBindingAdapter(
-attribute = "app:bind_swipeRefreshLayout_refreshing",
-event = "app:bind_swipeRefreshLayout_refreshingAttrChanged"
-)
-fun isSwipeRefreshLayoutRefreshing(swipeRefreshLayout: SwipeRefreshLayout): Boolean =
-swipeRefreshLayout.isRefreshing
+    @JvmStatic
+    @InverseBindingAdapter(
+            attribute = "app:bind_swipeRefreshLayout_refreshing",
+            event = "app:bind_swipeRefreshLayout_refreshingAttrChanged"
+    )
+    fun isSwipeRefreshLayoutRefreshing(swipeRefreshLayout: SwipeRefreshLayout): Boolean =
+            swipeRefreshLayout.isRefreshing
 
-@JvmStatic
-@BindingAdapter(
-"app:bind_swipeRefreshLayout_refreshingAttrChanged",
-requireAll = false
-)
-fun setOnRefreshListener(
-swipeRefreshLayout: SwipeRefreshLayout,
-bindingListener: InverseBindingListener?
-) {
-if (bindingListener != null)
-swipeRefreshLayout.setOnRefreshListener {
-bindingListener.onChange()
-}
-}
+    @JvmStatic
+    @BindingAdapter(
+            "app:bind_swipeRefreshLayout_refreshingAttrChanged",
+            requireAll = false
+    )
+    fun setOnRefreshListener(
+            swipeRefreshLayout: SwipeRefreshLayout,
+            bindingListener: InverseBindingListener?
+    ) {
+        if (bindingListener != null)
+            swipeRefreshLayout.setOnRefreshListener {
+                bindingListener.onChange()
+            }
+    }
 }
 ```
 
@@ -133,11 +119,11 @@ bindingListener.onChange()
 
 ```xml
 <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-app:bind_swipeRefreshLayout_refreshing="@={ fragment.viewModel.refreshing }">
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		app:bind_swipeRefreshLayout_refreshing="@={ fragment.viewModel.refreshing }">
 
-<androidx.recyclerview.widget.RecyclerView/>
+            <androidx.recyclerview.widget.RecyclerView/>
 
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 ```
@@ -166,10 +152,10 @@ val refreshing: MutableLiveData<Boolean> = MutableLiveData()
 @JvmStatic
 @BindingAdapter("app:bind_swipeRefreshLayout_refreshing")
 fun setSwipeRefreshLayoutRefreshing(
-swipeRefreshLayout: SwipeRefreshLayout,
-newValue: Boolean
+        swipeRefreshLayout: SwipeRefreshLayout,
+        newValue: Boolean
 ) {
-swipeRefreshLayout.isRefreshing = newValue
+        swipeRefreshLayout.isRefreshing = newValue
 }
 ```
 
@@ -184,17 +170,17 @@ swipeRefreshLayout.isRefreshing = newValue
 ```Kotlin
 @JvmStatic
 @BindingAdapter(
-"app:bind_swipeRefreshLayout_refreshingAttrChanged",
-requireAll = false
+        "app:bind_swipeRefreshLayout_refreshingAttrChanged",
+        requireAll = false
 )
 fun setOnRefreshListener(
-swipeRefreshLayout: SwipeRefreshLayout,
-bindingListener: InverseBindingListener?
+        swipeRefreshLayout: SwipeRefreshLayout,
+        bindingListener: InverseBindingListener?
 ) {
-if (bindingListener != null)
-swipeRefreshLayout.setOnRefreshListener {
-bindingListener.onChange()   // 1
-}
+    if (bindingListener != null)
+        swipeRefreshLayout.setOnRefreshListener {
+            bindingListener.onChange()   // 1
+        }
 }
 ```
 
@@ -215,11 +201,11 @@ bindingListener.onChange()   // 1
 ```Kotlin
 @JvmStatic
 @InverseBindingAdapter(
-attribute = "app:bind_swipeRefreshLayout_refreshing",
-event = "app:bind_swipeRefreshLayout_refreshingAttrChanged"   // 2 【注意！】
+        attribute = "app:bind_swipeRefreshLayout_refreshing",
+        event = "app:bind_swipeRefreshLayout_refreshingAttrChanged"   // 2 【注意！】
 )
 fun isSwipeRefreshLayoutRefreshing(swipeRefreshLayout: SwipeRefreshLayout): Boolean =
-swipeRefreshLayout.isRefreshing
+        swipeRefreshLayout.isRefreshing
 ```
 
 注意到  `//2` 注释的那行代码没有，我们通过相同的`tag`（即`app:bind_swipeRefreshLayout_refreshingAttrChanged`这个字符串，步骤二中我们也声明了相同的字符串），和 **步骤二** 中的代码块形成了绑定对接。
@@ -240,15 +226,15 @@ swipeRefreshLayout.isRefreshing
 @JvmStatic
 @BindingAdapter("app:bind_swipeRefreshLayout_refreshing")
 fun setSwipeRefreshLayoutRefreshing(
-swipeRefreshLayout: SwipeRefreshLayout,
-newValue: Boolean
+        swipeRefreshLayout: SwipeRefreshLayout,
+        newValue: Boolean
 ) {
-if (swipeRefreshLayout.isRefreshing != newValue)   // 只有新老状态不同才更新UI
-swipeRefreshLayout.isRefreshing = newValue
+    if (swipeRefreshLayout.isRefreshing != newValue)   // 只有新老状态不同才更新UI
+        swipeRefreshLayout.isRefreshing = newValue
 }
 ```
 
-## 小结：我为什么还在坚守DataBinding
+## 小结
 
 本文的初始计划中，还有一个模块是关于 **双向绑定的源码分析**，写到后来又觉得没有必要了，因为即使是 **源码**，也只是将上文中实现的思路啰嗦复述了一遍而已。
 
@@ -258,9 +244,28 @@ swipeRefreshLayout.isRefreshing = newValue
 
 当然，`DataBinding`并不一定就是正解，事实上，`RxBinding`就是另外一个优秀的解决方案，同样以`SwipeRefreshLayout`为例，我依然可以将其抽象为一个可观察的`Observable<Boolean>`——**前者通过在xml中对数据进行绑定和观察，后者通过`RxJava`对View的状态抽象为一个流，但最终，两者在思想上殊途同归。**
 
+## 系列文章
+
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
+
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
 ## 关于我
 
-Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[博客](https://www.jianshu.com/u/df76f81fe3ff)或者[Github](https://github.com/qingmei2)。
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
 
 如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
 
