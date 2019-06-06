@@ -1,12 +1,5 @@
 > 本文已授权 微信公众号 **玉刚说** （[@任玉刚](https://blog.csdn.net/singwhatiwanna/)）独家发布。
 
-> **争取打造 Android Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)
->* [实战：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
-
 ## 前言
 
 我是一个崇尚 **开源** 的Android开发者，在过去的一段时间里，我研究了Github上的一些优秀的开源库，这些库源码中那些 **天马行空** 的 **设计** 和 **思想** 令我沉醉其中。
@@ -17,7 +10,7 @@
 
 今年年初，我尝试开源了一个 **灵活可高度定制** 的Android图片选择框架 **[RxImagePicker](https://github.com/qingmei2/RxImagePicker)** 。这个库获得了部分认可，当然意见和建议也接踵而来，我很快认识到了自己目前能力的不足—— 通过 **组合** 的方式 **将多个优秀的库封装在一起** ，并不是就意味着真正拥有了 **组织架构** 的能力，而自己对于架构的掌握能力，目前还有很多不足之处。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-852c37a98a8cb3df.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://github.com/qingmei2/qingmei2-blogs-art/blob/master/android/jetpack/paging/image.56th7sllehg.png?raw=true)
 
 我意识到自己的不足，于是我积极寻找 **更多优秀的架构**，试图通过 **源码** 学习更多API之外的一些东西：**编程思想** 和 **架构设计** 。
 
@@ -29,7 +22,7 @@
 
 我尝试研究了**Paging Library**，并分享给大家，本文的目标是阐述：
 
-* 1.了解并如何使用 **Paging** 
+* 1.了解并如何使用 **Paging**
 * 2.知道 **Paging** 中每个类的 **职责**，并了解掌握其 **原理**
 * 3.站在设计者的角度，彻底搞懂 **Paging** 的 **设计思想**
 
@@ -59,15 +52,15 @@ https://developer.android.com/topic/libraries/architecture/paging/
 
 从语义上来讲，我的描述有点不太直观，不了解的读者估计会很迷糊。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-a1dd4218649bf317.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.9ut8nxg5xq7.png)
 
 举个例子，传统的 **上拉加载更多** 分页效果，应该类似 **淘宝APP** 这种，滑到底部，再上拉显示footer，才会加载数据：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-7c956d14871186bf.gif?imageMogr2/auto-orient/strip)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/1.mbapaw2ulv.gif)
 
 而**无限滚动** 分页效果，应该像是 **京东APP** 这样，如果我们慢慢滑动，当滑动了一定量的数据（这个阈值一般是数据总数的某个百分比）时，会自动请求加载下一页的数据，如果我们继续滑动，到达一定量的数据时，它会继续加载下一页数据，直到加载完所有数据——在用户看来，就好像是一次就加载出所有商品一样：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-aced17013c5a64f7.gif?imageMogr2/auto-orient/strip)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/2.rahshj2reo.gif)
 
 很明显，**无限滚动** 分页效果带来的用户体验更好，不仅是京东，包括 **知乎** 等其它APP，所采用的分页加载方式都是 **无限滚动** 的模式，而 **Paging** 也正是以**无限滚动** 的分页模式而设计的库。
 
@@ -75,11 +68,11 @@ https://developer.android.com/topic/libraries/architecture/paging/
 
 我写了一个Paging的sample，它最终的效果是这样：
 
-![sample_paging](https://upload-images.jianshu.io/upload_images/7293029-7632d616fcd6ce0a.gif?imageMogr2/auto-orient/strip)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/3.ybgbo92nepi.gif)
 
 项目结构图如下，这可以帮你尽快了解sample的结构：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-14afe026a9b0dacb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.e1m4nio8pp.png)
 
 > 我把这个sample的源码托管在了我的github上，你可以通过 [点我查看源码](https://github.com/qingmei2/SamplePaging) 。
 
@@ -87,7 +80,7 @@ https://developer.android.com/topic/libraries/architecture/paging/
 
 现在你已经对 Paging 的功能有了一定的了解，我们可以开始尝试使用它了。
 
-**请注意，本小节旨在简单阐述Paging入门使用，读者不应该困惑于Kotlin语法或者Room库的使用——你只要能看懂基本流程就好了。** 
+**请注意，本小节旨在简单阐述Paging入门使用，读者不应该困惑于Kotlin语法或者Room库的使用——你只要能看懂基本流程就好了。**
 
 > 因此，我 **更建议** 读者 [点击进入github](https://github.com/qingmei2/SamplePaging)，并将Sample代码拉下来阅读，**仅仅是阅读**—— 相比Kotlin语法和Room的API使用，**理解代码的流程** 更为重要。
 
@@ -274,7 +267,7 @@ class MainActivity : AppCompatActivity() {
 
 阅读到这里，我相信不少朋友会有这样一个想法—— **这个库看起来感觉好麻烦，我为什么要用它呢？**
 
-![](https://upload-images.jianshu.io/upload_images/7293029-2b1864ee1583eddf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.dy6xee2pvrb.png)
 
 
 我曾经写过一篇标题很浮夸的博客：**[0行Java代码实现RecyclerView](https://www.jianshu.com/p/c69b0e4e18f1)**—— 文中我提出了一种使用**DataBinding** 不需要哪怕一行Java代码就能实现列表/多类型列表的方式，但是最后我也提到了，这只是一种思路，这种简单的方式背后，可能会隐藏着 **严重耦合** 的情况—— **"一行代码实现XXX"** 的库屡见不鲜，它们看上去很 **简单** ，但是真正做到 **灵活，松耦合** 的库寥寥无几，我认为这种方式是有缺陷的。
@@ -285,7 +278,7 @@ class MainActivity : AppCompatActivity() {
 
 先上一张图
 
-![image](http://upload-images.jianshu.io/upload_images/7293029-27facf0a399c66b8.gif?imageMogr2/auto-orient/strip)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/4.81rjm2adho7.gif)
 
 这是官方提供的非常棒的原理示意图，简单概括一下：
 
@@ -350,7 +343,7 @@ PageList提供了 **PagedList.Config** 类供我们进行实例化配置，其�
 
 ```
  public static final class Builder {
-            //  省略其他Builder内部方法 
+            //  省略其他Builder内部方法
             private int mPageSize = -1;    //每次加载多少数据
             private int mPrefetchDistance = -1;   //距底部还有几条数据时，加载下一页数据
             private int mInitialLoadSizeHint = -1; //第一次加载多少数据
@@ -413,7 +406,7 @@ viewModel.allStudents.observe(this, Observer { adapter.submitList(it) })
 
 **UI层** 和 **业务层** 代码的隔离是优秀的设计，这样更便于 **测试** ，我们可以从Google官方文档的目录结构中看到这一点：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-a8aa7ac73a2e4356.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.uoxglzxuj9l.png)
 
 接下来，我会尝试站在设计者的角度，尝试去理解 **Paging** 如此设计的原因。
 
@@ -495,7 +488,7 @@ public T getItem(int index) {
 
 需要再次重复的是，即使是PagedList,也有很多种不同的 **数据分页策略**:
 
-![](https://upload-images.jianshu.io/upload_images/7293029-d4f9de0a11253aaa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.s0i7e9238pd.png)
 
 这些不同的 **PagedList** 在处理分页逻辑上，可能有不同的逻辑，那么，作为设计者，应该做到的是，**把异同的逻辑抽象出来交给子类实现（即loadAroundInternal方法），而把公共的处理逻辑暴漏出来**，并向上转型交给Adapter（实际上是 **AsyncPagedListDiffer**）去执行分页加载的API，也就是loadAround方法。
 
@@ -534,7 +527,7 @@ public T getItem(int index) {
 
 **PagedList**是一个抽象类，实际上它的作用是 **通过Builder实例化PagedList真正的对象**：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-fd3d43a78392fe85.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.3yllpbke6ox.png)
 
 通过Builder.build()调用create()方法，决定实例化哪个PagedList的子类：
 
@@ -556,7 +549,7 @@ Builder模式是非常耳熟能详的设计模式，它的好处是作为API的�
 
 ```
 class ContiguousPagedList<K, V> extends PagedList<V> implements PagedStorage.Callback {
-    
+
     ContiguousPagedList(
             //请注意这行，ContiguousPagedList内部需要ContiguousDataSource
             @NonNull ContiguousDataSource<K, V> dataSource,
@@ -575,7 +568,7 @@ abstract class ContiguousDataSource<Key, Value> extends DataSource<Key, Value> {
 }
 
 class TiledPagedList<T> extends PagedList<T> implements PagedStorage.Callback {
-    
+
     TiledPagedList(
             //请注意这行，TiledPagedList内部需要PositionalDataSource
             @NonNull PositionalDataSource<T> dataSource,
@@ -615,19 +608,38 @@ private static <K, T> PagedList<T> create(
 
 实际上，笔者上文所叙述的内容只是 **Paging** 的冰山一角，其源码中，还有很多很值得学习的优秀思想，本文无法一一列举，比如 **线程的切换**（加载分页数据应该在io线程，而反映在界面上时则应该在ui线程），再比如库 **对多种响应式数据类型的支持（LiveData，RxJava）**,这些实用的功能实现，都通过 **Paging** 优秀的设计，将其复杂的实现封装了起来，而将简单的API暴露给开发者调用，有兴趣的朋友可以去研究一下。
 
-## 小结&&吐槽
-本文的发布也算是 **历经坎坷**—— 初稿完成时间为6月初，但拖了一个月才发出来，原因就是本文写好之后，本来准备第二天发表，结果第二天早上一起来，发现 **这篇花费了3天晚上总结的文章，竟然没有能成功保存！**
+## 小结
 
-我自认为我内心还算比较强大，但还是差点崩溃，写过博客的同学都知道，这样一篇6k+的博客，所需要耗费很多心血才能完成。
-
-我重新整理了思路写了一遍——收获是有的，再一次翻阅源码的同时，我又加深了对Paging设计思想的理解，这个过程很痛苦，但是也值得。
-
-当然，即使如此，笔者水平有限，也难免文中内容有理解错误之处，也希望能有朋友不吝赐教，共同讨论一起进步。
+笔者水平有限，难免文中内容有理解错误之处，也希望能有朋友不吝赐教，共同讨论一起进步。
 
 
+**--------------------------广告分割线------------------------------**
 
-## 题外话
+## 系列文章
 
-很多朋友建议我 **少写废话**和**用Java不要用kotlin**，我的想法是，博客之所以是博客而不是笔记，就是因为它能够包含作者本身的思想和心路历程，这对我而言是**唯一**的，有朋友觉得”废话太多“，也有一些朋友认为这是对学习思路的一种体现，所以我不会去改变这种风格。
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
 
-其次，不会Kotlin不应该成为放弃学习的理由，不仅是Google最新的IO大会，而且我的男神[JakeWharton](https://github.com/JakeWharton)代码片段和视频演讲中，使用的都是Kotlin——**男神用啥我用啥**，我会这样坚持下去，这也是额外的学习。
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
+## 关于我
+
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
