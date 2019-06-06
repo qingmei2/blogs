@@ -1,21 +1,6 @@
 > 本文已授权 微信公众号 **玉刚说** （[@任玉刚](https://blog.csdn.net/singwhatiwanna/)）独家发布。
 
-> **争取打造 Android Jetpack 讲解的最好的博客系列**：
->* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://www.jianshu.com/p/b1208012b268)
->* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://www.jianshu.com/p/59adff59ed29)
->* [Android官方架构组件Paging：分页库的设计美学](https://www.jianshu.com/p/10bf4bf59122)
->* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://www.jianshu.com/p/ad040aab0e66)
->* [实战：使用MVVM尝试开发Github客户端及对编程的一些思考](https://www.jianshu.com/p/b03710f19123)
-
 ## 前言
-
-我在项目中尽量避免 **使用** 和 **管理**  Fragment, 尤其是处理Fragment的 **多重嵌套** 和 **回退栈**的情况。所幸有Activity在，我绕过了很多 Fragment **复杂的使用场景**——必须承认，相比Activity的简单易上手，Fragment的古灵精怪令我头痛不已。
-
-当然，Github上也有很多前辈对于Fragment的管理框架，这是 **最简单** 的解决方案，比如目前比较火的 **[Fragmentation](https://github.com/YoKeyword/Fragmentation)**，以及我司低调的 [Yumenokanata](https://github.com/Yumenokanata)大神 **函数式架构** 的 **[FragmentManager](https://github.com/Yumenokanata/FragmentManager)**。它们都经历过若干项目的检验，框架 **成熟** 且 **稳定**，其中的设计思想我甚至觉得 **整个职业生涯都难以企及**。
-
-但我一直没有尝试使用它们，原因是因为Activity的存在，我觉得没有足够的必要在 **复杂的场景**使用多Fragment去实现，简单的回退栈管理通过Android原生的API也足以实现——可以说，Fragment复杂的管理应用一直是我的 **技术盲点**。
-
-## 学习契机
 
 在不久前的Google 2018 I/O大会上，Google正式推出了**AndroidJetpack**  ——这是一套组件、工具和指导，可以帮助开发者构建出色的 Android 应用，这其中就包含了去年推出的 Lifecycle, ViewModel, LiveData 以及 Room。除此之外，**AndroidJetpack** 还隆重推出了一个新的架构组件：**Navigation**。
 
@@ -25,7 +10,7 @@
 
 抛开比较性的话题不谈（StoryBoard VS Navigation?），Navigation的发布让我意识到 **这是一个契机**，我觉得我有必要花时间去深入了解它——既能 **学习新的技术及理念** ，同时又能 **查漏补缺，完善自己的Android知识体系（Fragment的管理）**。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-aefa8cf49b8820ce.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.2bandw71i6u.png)
 
 这件事立即被我列上日程，过去的一周，我闲暇之际仔细研究了 **Navigation**, 并略有心得，我尝试写下本文，在总结的同时，希望能够给后来的朋友们一些 **系统性的指导建议** 。如果可能，我甚至希望这篇文章能够做到:
 
@@ -54,15 +39,14 @@ https://developer.android.com/topic/libraries/architecture/navigation/
 
 我写了一个Navigation的sample，它最终的效果是这样：
 
-![sample.gif](https://upload-images.jianshu.io/upload_images/7293029-a0439fd823c7baec.gif?imageMogr2/auto-orient/strip)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/1.uk3ey07tjvt.gif)
 
 
 这是3个简单的Fragment之间跳转的情景，经过 **转场动画** 的修饰，它们之前的切换非常 **流畅** 且 **自然**。在展示的最后，我们可以看到，Fragment2 -> Fragment1的时候，实际上是由 用户 **点击手机Back键** 触发的。
 
 项目结构图如下，这可以帮你尽快了解sample的结构：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-88a837918a4c43f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.h7ac21gg9i.png)
 
 > 我把这个sample的源码托管在了我的github上，你可以通过 [点我查看源码](https://github.com/qingmei2/SampleNavigation) 。
 
@@ -74,7 +58,7 @@ https://developer.android.com/topic/libraries/architecture/navigation/
 
 > 无论是否认可，我们都必须承认，Google已经在尝试让Kotlin上位，无论是今年IO大会的 **数据展示**，还是官方文档上的 **代码示例片段**，亦或是Google最新 **开源Demo的源码**，使用语言清一色 Kotlin，本文亦然。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-69da8c7c81cd8c9f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.chu8p4gmabr.png)
 
 
 #### ① 在Module下的build.gradle中添加以下依赖：
@@ -117,11 +101,11 @@ class MainPage3Fragment : Fragment() {
 
 在res目录下新建navigation文件夹，然后新建一个navigation的resource文件，我叫它 **nav_graph_main.xml** ：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-494482b3bdba6f6b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.0zd07r5mc4vg.png)
 
 打开导航视图文件，我们可以在AndroidStudio 3.2版本上，进行可视化编辑，包括选择新增Fragment，或者拖拽，连接Fragment：
 
-![](https://upload-images.jianshu.io/upload_images/7293029-a79468b529eec3e9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.xq10dlbi0co.png)
 
 #### ④ 编辑导航视图文件
 
@@ -236,7 +220,7 @@ class MainPage1Fragment : Fragment() {
 }
 
 class MainPage2Fragment : Fragment() {
-    
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         btn.setOnClickListener {
@@ -260,10 +244,10 @@ class MainPage3Fragment : Fragment() {
 }
 ```
 
-可以看到，我们对于Fragment 并非是通过原生的 **FragmentManager** 和 **FragmentTransaction** 进行控制的。而是通过以下API进行的控制： 
+可以看到，我们对于Fragment 并非是通过原生的 **FragmentManager** 和 **FragmentTransaction** 进行控制的。而是通过以下API进行的控制：
 
 * **Navigation.findNavController(params).navigateUp()**
-* **Navigation.findNavController(params).navigate(actionId)** 
+* **Navigation.findNavController(params).navigate(actionId)**
 
 > 到这里，Navigation最基本的使用就已经讲解完毕了。您可以通过运行预览和示例 **基本一致** 的效果，如果遇到问题，或者有疑问，可以[点我查看源码](https://github.com/qingmei2/SampleNavigation) 。
 
@@ -275,7 +259,7 @@ class MainPage3Fragment : Fragment() {
 
 我感觉很难受， 所谓 **行百里路半九十**，别说九十，这个Navigation，**我一窍不通**。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-19778f7793d404c2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.4u66wy2ib9u.png)
 
 **仅有上述示例代码毫无意义**，通过它们，更应该将其理解为 **入门**；接下来我们需要做到 **了解每一个类的职责，理解框架设计者的思想**。
 
@@ -364,7 +348,7 @@ NavGraphFragment在 **获取** 并 **解析** 完这个xml资源文件后，它�
 <action
     android:id="@+id/action_page2"
     app:destination="@id/page2Fragment" />
-``` 
+```
 **app:destination**的属性，声明了这个行为导航的 **destination（目的地）**，我们可以看到，它会指印跳转到 id 为 **page2Fragment** 的Fragment（也就是 **MainPage2Fragment**）。
 
 **android:id** 这个id作为Action唯一的 **标识**，在Fragment的某个点击事件中，我们通过id指向**对应的行为**，就像这样：
@@ -409,7 +393,7 @@ Navigation.findNavController(View) 返回了一个 **NavController** ,它是整�
 
 我们通过获取 **NavController**，然后调用  NavController.navigate()方法进行导航。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-e2770edac9c83820.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.37y62a1uqz8.png)
 
 我们更多情况下通过传入ActionId，指定对应的 **导航行为** ；同时可以通过传入Bundle以 **数据传递**；或者是再传入一个 **NavOptions**配置更多（比如 **转场动画**，它也可以通过这种方式进行代码的动态配置）。
 
@@ -426,7 +410,7 @@ navigateUp()**。
 
 面试官对此十分感动，然后让我谈谈 **对它架构设计的一些个人观点**。
 
-![](https://upload-images.jianshu.io/upload_images/7293029-202e118f6bb5596f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.5m727974xxi.png)
 
 到了这一步，我们算得上是 **API的搬运工** ，我们已经 **了解每一个类的职责**，还没有完全 **理解框架设计者的思想**。
 
@@ -442,7 +426,7 @@ navigateUp()**。
 
 我花了一些时间绘制了 **Navigation的UML类图**，我坚信，这种方式能帮助你我 **更深刻的理解** Navigation的整体架构：
 
-![UML类图](https://upload-images.jianshu.io/upload_images/7293029-da074ee4ca0484ec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/navigation/image.f9gw6e58lf.png)
 
 让我们换个角度，我们的身份不再是 **源码的观众**，而是 **架构的设计者**。
 
@@ -511,7 +495,7 @@ private static NavController findViewNavController(@NonNull View view) {
 这之后，获取了所有 **Destination**（在本文中即**Page1Fragment** , **Page2Fragment** , **Page3Fragment** ） 的 Class对象，并通过反射的方式，实例化对应的 **Destination**，通过一个队列保存：
 
 ```
-    private NavInflater mInflater;  //NavInflater 
+    private NavInflater mInflater;  //NavInflater
     private NavGraph mGraph;        //解析xml，得到NavGraph
     private int mGraphId;           //xml对应的id，比如 nav_graph_main
     //所有Destination的队列,用来处理回退栈
@@ -561,7 +545,7 @@ public abstract class Navigator<D extends NavDestination> {
 * 2.能够指定导航
 * 3.能够后退导航
 
-你看，我的 **NavController** 获取了所有 **NavDestination** 的Class对象，但是我不负责它 **如何实例化** ，也不负责 **如何导航** ，也不负责 
+你看，我的 **NavController** 获取了所有 **NavDestination** 的Class对象，但是我不负责它 **如何实例化** ，也不负责 **如何导航** ，也不负责
  **如何后退** ——我仅仅持有向上的引用，然后调用它的接口方法，它的实现我不关心。
 
 以 **FragmentNavigator**为例，我们来看看它是如何执行的职责：
@@ -569,7 +553,7 @@ public abstract class Navigator<D extends NavDestination> {
 ```
 public class FragmentNavigator extends Navigator<FragmentNavigator.Destination> {
     //省略大量非关键代码，请以实际代码为主！
-  
+
     @Override
     public boolean popBackStack() {
         return mFragmentManager.popBackStackImmediate();
@@ -611,3 +595,34 @@ public class FragmentNavigator extends Navigator<FragmentNavigator.Destination> 
 **Navigation** 是一个优秀的库，这从API上无法体现，因为它和其它优秀的三方 Fragment 管理库 都能达到 **固定的目标**。
 
 并且，随着技术的不断发展，它们也早晚会被历史所淹没，我们能够做到的，就是使用API的同时，**学习它的思想，并收为己用**。
+
+**--------------------------广告分割线------------------------------**
+
+## 系列文章
+
+>  **争取打造 Android Jetpack 讲解的最好的博客系列**：
+>* [Android官方架构组件Lifecycle：生命周期组件详解&原理分析](https://juejin.im/post/5c53beaf51882562e27e5ad9)
+>* [Android官方架构组件ViewModel:从前世今生到追本溯源](https://juejin.im/post/5c047fd3e51d45666017ff86)
+>* [Android官方架构组件LiveData: 观察者模式领域二三事](https://juejin.im/post/5c25753af265da61561f5335)
+>* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+>* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+>* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+>* [Android官方架构组件Navigation：大巧不工的Fragment管理框架](https://juejin.im/post/5c53be3951882562d27416c6)  
+>* [Android官方架构组件DataBinding-Ex:双向绑定篇](https://juejin.im/post/5c3e04b7f265da611b589574)  
+
+> **Android Jetpack 实战篇**：
+>* [开源项目：MVVM+Jetpack实现的Github客户端](https://github.com/qingmei2/MVVM-Rhine)
+>* [开源项目：基于MVVM, MVI+Jetpack实现的Github客户端](https://github.com/qingmei2/MVI-Rhine)
+>* [总结：使用MVVM尝试开发Github客户端及对编程的一些思考](https://juejin.im/post/5be7bbd9f265da61797458cf)
+
+---
+
+## 关于我
+
+Hello，我是[却把清梅嗅](https://github.com/qingmei2)，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的[个人博客](https://juejin.im/user/588555ff1b69e600591e8462)或者[Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
