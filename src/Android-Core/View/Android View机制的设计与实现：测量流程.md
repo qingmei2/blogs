@@ -1,8 +1,8 @@
 # Android | View机制设计与实现：测量流程
 
-`Android`本身的`View`体系非常庞大，源码中值得思考和借鉴之处众多，以`View`本身的绘制流程为例，其经过`measure`测量、`layout`布局、`draw`绘制三个过程，最终才能够讲一个`View`绘制出来并展示在用户面前。
+`Android`本身的`View`体系非常庞大，源码中值得思考和借鉴之处众多，以`View`本身的绘制流程为例，其经过`measure`测量、`layout`布局、`draw`绘制三个过程，最终才能够将其绘制出来并展示在用户面前。
 
-本文将针对绘制过程中的 **测量流程(`Measure`)** 进行系统地归纳总结：
+本文将针对绘制过程中的 **测量流程** 的设计思想进行系统地归纳总结，读者需要对`View`的`measure()`相关知识有初步的了解：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/view/image.mcipzl9ajip.png)
 
@@ -40,9 +40,9 @@ protected final void setMeasuredDimension(int measuredWidth, int measuredHeight)
 * 2.父控件高度为`wrap_content`(包裹内容)，子控件设置为`layout_height="match_parent"`;  
 * 3.父控件高度为`match_parent`(包裹内容)，子控件设置为`layout_height="match_parent"`;
 
-这些情况下，简单的通过`setMeasuredDimension()`函数似乎都不可能达到测量控件的目的，因为无法计算出准确控件本身的宽高值, 即**子控件的测量须依赖于父控件和子控件两者共同才能完成**，而父控件对子控件的布局约束，便是前文提到的 **布局要求**，即`MeasureSpec`类。
+这些情况下，因为无法计算出准确控件本身的宽高值，简单的通过`setMeasuredDimension()`函数似乎不可能达到测量控件的目的，即**子控件的测量须依赖于父控件和子控件两者共同才能完成**，而父控件对子控件的布局约束，便是前文提到的 **布局要求**，即`MeasureSpec`类。
 
-## MeasureSpec类
+### MeasureSpec类
 
 从面向对象的角度来看，我们将`MeasureSpec`类设计成这样：
 
@@ -105,14 +105,102 @@ public static class MeasureSpec {
 
 这个`int`值中，前2位代表了测量模式，后30位则表示了测量的大小，对于模式和大小值的获取，只需要通过位运算即可。
 
-以宽度举例来说，若我们设置宽度=5px（二进制的101），那么`mode`对应`EXACTLY`,在创建测量要求的时候，只需要通过二进制的相加，便可得到存储了相关信息的`int`值：
+以宽度举例来说，若我们设置宽度=5px（二进制对应了101），那么`mode`对应`EXACTLY`,在创建测量要求的时候，只需要通过二进制的相加，便可得到存储了相关信息的`int`值：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/view/image.29lx5bauvgy.png)
 
-而当需要获得`Mode`的时候只需要用`measureSpec`与`MODE_TASK`相与即可如下图：
+而当需要获得`Mode`的时候只需要用`measureSpec`与`MODE_TASK`相与即可，如下图：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/view/image.9gd1lev69d.png)
 
-同理，想获得`size`的话只需要只需要`measureSpec`与`~MODE_TASK`相与即可如下图
+同理，想获得`size`的话只需要只需要`measureSpec`与`~MODE_TASK`相与即可，如下图：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/view/image.ppkjtxeikvp.png)
+
+现在读者对`MeasureSpec`类有了初步地认识，在`Android`绘制过程中，`View`宽或者高的 **布局要求** 实际上是通过32位的`int`值进行的描述, 而`MeasureSpec`类本身只是一个静态方法的容器而已。
+
+## 测量单个控件
+
+只考虑单个控件的测量，整个过程需要定义三个重要的函数，分别为：
+
+* `void measure(int widthMeasureSpec, int heightMeasureSpec)`：执行测量的函数;
+* `void onMeasure(int widthMeasureSpec, int heightMeasureSpec)`：真正执行测量的函数，开发者需要自己实现自定义的测量逻辑；
+* `void setMeasuredDimension(int measuredWidth, int measuredHeight)`：完成测量的函数；
+
+为什么说需要定义这样三个参数？
+
+### 1.measure()入口函数：标记测量的开始
+
+首先父控件需要通过调用子控件的`measure()`函数，并同时将宽和高的 **布局要求** 作为参数传入，标志子控件本身测量的开始：
+
+```Java
+// 这个是父控件的代码，让子控件开始测量
+child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+```
+
+对于`View`的测量流程，其必然包含了2部分：**公共逻辑部分** 和 **开发者自定义测量的逻辑部分**，为了保证公共逻辑部分代码的安全性，设计者将`measure()`方法配置了`final`修饰符:
+
+```Java
+public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
+  // ... 公共逻辑
+
+  // 开发者需要自己重写onMeasure函数，以自定义测量逻辑
+  onMeasure(widthMeasureSpec, heightMeasureSpec);
+}
+```
+
+开发者不能重写`measure()`函数，并将View自定义测量的策略通过定义一个新的`onMeasure()`接口暴露出来供开发者重写。
+
+### 2.onMeasure()函数：自定义View的测量策略
+
+`onMeasure()`函数中，`View`自身也提供了一个默认的测量策略:
+
+```Java
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
+            getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+}
+```
+
+以宽度为例，如何获取`View`默认的宽度呢：
+
+> `getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec)`
+
+* 1.在某些情况下（比如自身设置了`minWidth`或者`background`属性），`View`需要通过`getSuggestedMinimumWidth()`函数作为默认的宽度值：
+
+```Java
+protected int getSuggestedMinimumWidth() {
+    return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());
+}
+```
+
+* 2.这之后，将所得结果作为参数传递到`getDefaultSize(minWidth, widthMeasureSpec)`函数中，根据 **布局要求** 计算出`View`最后测量的宽度值：
+
+```Java
+public static int getDefaultSize(int size, int measureSpec) {
+    // 宽度的默认值
+    int result = size;
+    int specMode = MeasureSpec.getMode(measureSpec);
+    int specSize = MeasureSpec.getSize(measureSpec);
+
+    // 根据不同的测量模式，返回的测量结果不同
+    switch (specMode) {
+      // 任意模式，宽度为默认值
+      case MeasureSpec.UNSPECIFIED:
+          result = size;
+          break;
+      // match_parent、wrap_content则返回布局要求中的size值
+      case MeasureSpec.AT_MOST:
+      case MeasureSpec.EXACTLY:
+          result = specSize;
+          break;
+    }
+    return result;
+}
+```
+
+> 上述代码中，View的默认测量策略也证明了，即使View设置的是`layout_width="wrap_content"`,其宽度也会填充父布局（效果同`match_parent`），高度依然。
+
+### 3.setMeasuredDimension()函数：标志测量的完成
+
+重写`onMeasure()`函数的过程中，`setMeasuredDimension(width，height)`函数的调用非常重要，它标志着`View`的测量得出了结果
