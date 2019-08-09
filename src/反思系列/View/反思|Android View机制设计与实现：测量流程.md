@@ -1,4 +1,6 @@
-# Android-Ex | View机制设计与实现：测量流程
+# 反思|Android View机制设计与实现：测量流程
+
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考[这里](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
 
 ## 概述
 
@@ -40,9 +42,9 @@ protected final void setMeasuredDimension(int measuredWidth, int measuredHeight)
 
 * 1.父控件固定宽高只有`${x}px`，子控件设置为`layout_height="${y}px"`;  
 * 2.父控件高度为`wrap_content`(包裹内容)，子控件设置为`layout_height="match_parent"`;  
-* 3.父控件高度为`match_parent`(包裹内容)，子控件设置为`layout_height="match_parent"`;  
+* 3.父控件高度为`match_parent`(填充)，子控件设置为`layout_height="match_parent"`;  
 
-这些情况下，因为无法计算出准确控件本身的宽高值，简单的通过`setMeasuredDimension()`函数似乎不可能达到测量控件的目的，即**子控件的测量须依赖于父控件和子控件两者共同才能完成**，而父控件对子控件的布局约束，便是前文提到的 **布局要求**，即`MeasureSpec`类。
+这些情况下，因为无法计算出准确控件本身的宽高值，简单的通过`setMeasuredDimension()`函数似乎不可能达到测量控件的目的，因为 **子控件的测量结果是由父控件和其本身共同决定的** （这个下文会解释），而父控件对子控件的布局约束，便是前文提到的 **布局要求**，即`MeasureSpec`类。
 
 ### MeasureSpec类
 
@@ -69,8 +71,8 @@ public final class MeasureSpec {
 
 在设计的过程中，我们将布局要求分成了2个属性。**测量大小** 意味着控件需要对应大小的宽高，**测量模式** 则表示控件对应的宽高模式：
 
-> * UNSPECIFIED：父元素不对子元素施加任何束缚，子元素可以得到任意想要的大小；日常开发中自定义View不考虑这种模式，可暂时先忽略；
-> * EXACTLY：父元素决定子元素的确切大小，子元素将被限定在给定的边界里而忽略它本身大小；这里我们理解为控件的宽或者高被设置为 `match_parent` 或者指定大小，比如`20dp`.
+> * UNSPECIFIED：父元素不对子元素施加任何束缚，子元素可以得到任意想要的大小；日常开发中自定义View不考虑这种模式，可暂时先忽略；   
+> * EXACTLY：父元素决定子元素的确切大小，子元素将被限定在给定的边界里而忽略它本身大小；这里我们理解为控件的宽或者高被设置为 `match_parent` 或者指定大小，比如`20dp`；
 > * AT_MOST：子元素至多达到指定大小的值；这里我们理解为控件的宽或者高被设置为`wrap_content`。
 
 巧妙的是，`Android`并非通过上述定义`MeasureSpec`对象的方式对 **布局要求** 进行描述，而是使用了更简单的二进制的方式，用一个32位的`int`值进行替代：
@@ -131,7 +133,7 @@ public static class MeasureSpec {
 * `void onMeasure(int widthMeasureSpec, int heightMeasureSpec)`：真正执行测量的函数，开发者需要自己实现自定义的测量逻辑;  
 * `final void setMeasuredDimension(int measuredWidth, int measuredHeight)`：完成测量的函数；  
 
-为什么说需要定义这样三个参数？
+为什么说需要定义这样三个函数？
 
 ### 1.measure()入口函数：标记测量的开始
 
@@ -441,23 +443,14 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
 至此，测量流程整体实现完毕。
 
-## 小结
+## 参考
 
-（未完待续）
+* Android源码
+* [Android开发艺术探索](https://item.jd.com/11760209.html)
+* [Android中measure过程、WRAP_CONTENT详解以及xml布局文件解析流程浅析](https://blog.csdn.net/qinjuning/article/details/8074262)
+* [Android：手把手带你清晰梳理自定义View的工作全流程！](https://blog.csdn.net/carson_ho/article/details/98477394)
 
 ---
-
-## 关于AndroidEx系列
-
-我曾经写过很多博客，这其中有一部分是源码分析相关的，不幸的是，这些恰恰是我所有博客中回顾最少的博客系列——里面涉及了大量代码片段的复制粘贴，以及到处可见一行一行啰嗦的注释，坦白的说，很多源码分析的博客写完之后，我再也没有去看过。
-
-从结果来看，**源码+注释分析** 的博客总结是非常差的一种学习方式，因为这通常意味着从API入手，从结果倒推过程，这导致往往我只知其然而不知其所以然。
-
-相反，我认为正确的学习总结应该是先理解思想，然后一点点去丰富代码，一点点补充整个体系的血和肉，从大局到具体，从宏观到细节。
-
-这种学习总结的方式的好处是，**文章的核心应该是思想的传递而非代码**，我不需要在执着于代码的细节，每一行代码的意义——即使很久之后我忘记了，通过快速阅读，我也能第一时间将这些知识捡回来，而不是看着大段大段似曾相识而又倍感陌生的 **源码+注释** 皱紧眉头。
-
-`AndroidEx`系列是我对这种学习方式的一次尝试，其最终目标是0代码，希望你们会喜欢。
 
 ## 关于我
 
@@ -468,3 +461,4 @@ Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得
 * [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
 * [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
 * [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
+* [关于反思系列](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
