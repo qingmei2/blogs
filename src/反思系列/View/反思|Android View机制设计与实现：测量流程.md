@@ -1,6 +1,6 @@
 # 反思|Android View机制设计与实现：测量流程
 
-> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考[这里](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md) 。
 
 ## 概述
 
@@ -448,7 +448,7 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 * Android源码
 * [Android开发艺术探索](https://item.jd.com/11760209.html)
 * [Android中measure过程、WRAP_CONTENT详解以及xml布局文件解析流程浅析](https://blog.csdn.net/qinjuning/article/details/8074262)
-* [Android：手把手带你清晰梳理自定义View的工作全流程！](https://blog.csdn.net/carson_ho/article/details/98477394)
+* [Android手把手带你清晰梳理自定义View的工作全流程](https://blog.csdn.net/carson_ho/article/details/98477394)
 
 ---
 
@@ -461,4 +461,4 @@ Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得
 * [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
 * [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
 * [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
-* [关于反思系列](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
+* [关于《反思》系列](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
