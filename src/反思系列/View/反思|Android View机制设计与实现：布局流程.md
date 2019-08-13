@@ -27,7 +27,7 @@
 
 读者认真思考可以得出，布局流程实际上是一个复杂的过程，整个流程主要逻辑顺序如下：
 
-* 1.决定是否需要重新进行测量流程（onMeasure）；
+* 1.决定是否需要重新进行测量流程`onMeasure()`；
 * 2.将自身所在的位置信息进行保存；
 * 3.判断本次布局流程是否引发了布局的改变；
 * 4.若布局发生了改变，令所有子控件重新布局；
@@ -77,7 +77,7 @@ public void layout(int l, int t, int r, int b) {
 
 ### 2.setFrame函数：保存本次布局信息
 
-为什么需要保存布局信息？因为我们总是有获取控件的宽和高的需求——比如接下来的绘制阶段（`onDraw()`）；而保存了布局信息，就能通过这些值计算控件本身的宽高：
+为什么需要保存布局信息？因为我们总是有获取控件的宽和高的需求——比如接下来的`onDraw()`绘制阶段；而保存了布局信息，就能通过这些值计算控件本身的宽高：
 
 ```Java
 public final int getWidth() { return mWidth; }
@@ -206,7 +206,7 @@ private void setChildFrame(View child, int left, int top, int width, int height)
 
 ### getWidth 和 getMeasuredWidth 的区别
 
-首先，从上文中我们得知，`getWidth()`和`getHeight()`函数的相关信息实际上是在`setFrame()`函数执行完毕才准备完毕的——我们大致可以认为是这两个函数 **只有布局流程(layout)执行完毕才能调用**，而在父控件的`onLayout()`函数中，获取子控件宽度和高度的时，子控件还并未开始进行布局流程，因此此时不能调用`getWidth()`函数，而只能通过`getMeasuredWidth()`函数获取控件测量阶段结果的宽度。
+首先，从上文中我们得知，`getWidth()`和`getHeight()`函数的相关信息实际上是在`setFrame()`函数执行完毕才准备完毕的——我们大致可以认为是这两个函数 **只有布局流程(layout)执行完毕才能调用**，而在父控件的`onLayout()`函数中，获取子控件宽度和高度时，子控件还并未开始进行布局流程，因此此时不能调用`getWidth()`函数，而只能通过`getMeasuredWidth()`函数获取控件测量阶段结果的宽度。
 
 那么当控件绘制流程执行完毕后，`getWidth()`和`getMeasuredWidth()`函数的值有什么区别呢？从上述`setChildFrame()`函数中的源码可以得知，布局流程执行后，`getWidth()`返回值的本质其实就是`getMeasuredWidth()`——因此本质上，当我们没有手动调用`layout()`函数强制修改控件的布局信息的话，两个函数的返回值大小是完全一致的。
 
