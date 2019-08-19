@@ -28,7 +28,7 @@
 
 一般来说，一个`View`的实例化依赖`Context`上下文对象和`attr`的属性集，而设计者正是通过将上下文对象和属性集作为参数，通过 **反射** 注入到`View`的构造器中对`View`进行创建。
 
-除此之外，考虑到 **性能优化** 和 **可扩展性**，设计者为`LayoutInlater`设计了一个`LayoutInflater.Factory2`接口，该接口设计得非常巧妙：在`xml`解析过程中，开发者可以通过配置该接口对`View`的创建过程进行拦截：**通过new的方式创建控件以避免大量地使用反射**，亦或者 **额外配置特殊标签的解析逻辑以创建特殊组件**（比如`Fragment`）。
+除此之外，考虑到 **性能优化** 和 **可扩展性**，设计者为`LayoutInflater`设计了一个`LayoutInflater.Factory2`接口，该接口设计得非常巧妙：在`xml`解析过程中，开发者可以通过配置该接口对`View`的创建过程进行拦截：**通过new的方式创建控件以避免大量地使用反射**，亦或者 **额外配置特殊标签的解析逻辑以创建特殊组件**（比如`Fragment`）。
 
 > `LayoutInflater.Factory2`接口在`Android SDK`中的应用非常普遍，`AppCompatActivity`和`FragmentManager`就是最有力的体现，`LayoutInflater.inflate()`方法的理解虽然重要，但笔者窃以为`LayoutInflater.Factory2`的重要性与其相比不逞多让。
 
@@ -215,3 +215,306 @@ public class Activity extends ContextThemeWrapper {
 * 2.即使是`Activity.setContentView()`函数,本质上也还是通过`LayoutInflater.inflate()`函数对布局进行解析和创建。
 
 ### 2.inflate()流程的设计和实现
+
+从思想上来看，`LayoutInflater.inflate()`函数内部实现比较简单直观：
+
+```java
+public View inflate(@LayoutRes int resource, ViewGroup root, boolean attachToRoot) {
+      // ...
+}
+```
+
+对该函数的参数进行简单归纳如下：第一个参数代表所要加载的布局，第二个参数是`ViewGroup`，这个参数需要与第3个参数配合使用，`attachToRoot`如果为`true`就把布局添加到`ViewGroup`中；若为`false`则只采用`ViewGroup`的`LayoutParams`作为测量的依据却不直接添加到`ViewGroup`中。
+
+从设计的角度上思考，该函数的设计过程中，**为什么需要定义这样的三个参数？为什么这样三个参数就能涵盖我们日常开发过程中布局填充的需求？**
+
+#### 2.1 三个火枪手
+
+对于第一个资源id参数而言，UI的创建必然依赖了布局文件资源的引用，因此这个参数无可厚非。
+
+我们先略过第二个参数，直接思考第三个参数，为什么需要这样一个`boolean`类型的值，以决定是否将创建的`View`直接添加到指定的`ViewGroup`中呢，不设计这个参数是否可以？
+
+换个角度思考，这个问题的本质其实是：是否每个`View`的创建都必须立即添加在`ViewGroup`中？答案当然是否定的，为了保证性能，设计者不可能让所有的`View`被创建后都能够立即被立即添加在`ViewGroup`中，这与目前`Android`中很多组件的设计都有冲突，比如`ViewStub`、`RecyclerView`的条目、`Fragment`等等。
+
+因此，更好的方式应该是可以通过一个`boolean`的开关将整个过程切分成2个小步骤，当`View`生成并根据`ViewGroup`的布局参数生成了对应的测量依据后，开发者可以根据需求手动灵活配置是否立即添加到`ViewGroup`中——这就是第三个参数的由来。
+
+那么`ViewGroup`类型的第二个参数为什么可以为空呢？实际开发过程中，似乎并没有什么场景在填充布局时需要使`ViewGroup`为空？
+
+读者仔细思考可以很容易得出结论，事实上该参数可空是有必要的——对于`Activity`UI的创建而言，根结点最顶层的`ViewGroup`必然是没有父控件的，这时在布局的创建时，就必须通过将`null`作为第二个参数交给`LayoutInlater`的`inflate()`方法，当`View`被创建好后，将`View`的布局参数配置为对应屏幕的宽高：
+
+```java
+// DecorView.onResourcesLoaded()函数
+void onResourcesLoaded(LayoutInflater inflater, int layoutResource) {
+    // ...
+    // 创建最顶层的布局时，需要指定父布局为null
+    final View root = inflater.inflate(layoutResource, null);
+    // 然后将宽高的布局参数都指定为 MATCH_PARENT（屏幕的宽高）
+    mDecorCaptionView.addView(root, new ViewGroup.MarginLayoutParams(MATCH_PARENT, MATCH_PARENT));
+}
+```
+
+现在我们理解了 **为什么三个参数就能涵盖开发过程中布局填充的需求**，接下来继续思考下一个问题，`LayoutInflater`是如何解析`xml`的。
+
+#### 2.2 xml解析流程
+
+`xml`解析过程的思路很简单；
+
+* 1. 首先根据布局文件，生成对应布局的`XmlPullParser`解析器对象；
+* 2. 对于单个`View`的解析而言，一个`View`的实例化依赖`Context`上下文对象和`attr`的属性集，而设计者正是通过将上下文对象和属性集作为参数，通过 **反射** 注入到`View`的构造器中对单个`View`进行创建；
+* 3. 对于整个`xml`文件的解析而言，整个流程依然通过典型的递归思想，对布局文件中的`xml`文件进行遍历解析，自底至顶对`View`依次进行创建，最终完成了整个`View`树的创建。
+
+单个`View`的实例化实现如下，这里采用伪代码的方式实现：
+
+```java
+// LayoutInflater类
+public final View createView(String name, String prefix, AttributeSet attrs) {
+    // ...
+    // 1.根据View的全名称路径，获取View的Class对象
+    Class<? extends View> clazz = mContext.getClassLoader().loadClass(name + prefix).asSubclass(View.class);
+    // 2.获取对应View的构造器
+    Constructor<? extends View> constructor = clazz.getConstructor(mConstructorSignature);
+    // 3.根据构造器，通过反射生成对应 View
+    args[0] = mContext;
+    args[1] = attrs;
+    final View view = constructor.newInstance(args);
+    return view;
+}
+```
+
+对于整体解析流程而言，伪代码实现如下：
+
+``` java
+void rInflate(XmlPullParser parser, View parent, Context context, AttributeSet attrs) {
+  // 1.解析当前控件
+  while (parser.next()!= XmlPullParser.END_TAG) {
+    final View view = createViewFromTag(parent, name, context, attrs);
+    final ViewGroup viewGroup = (ViewGroup) parent;
+    final ViewGroup.LayoutParams params = viewGroup.generateLayoutParams(attrs);
+    // 2.解析子布局
+    rInflateChildren(parser, view, attrs, true);
+    // 所有子布局解析结束，将当前控件及布局参数添加到父布局中
+    viewGroup.addView(view, params);
+  }
+}
+
+final void rInflateChildren(XmlPullParser parser, View parent, AttributeSet attrs, boolean finishInflate){
+  // 3.子布局作为根布局，通过递归的方式，层级向下一层层解析
+  // 继续执行 1
+  rInflate(parser, parent, parent.getContext(), attrs, finishInflate);
+}
+```
+
+至此，一般情况下的布局填充流程到此结束，`inflate()`方法执行完毕，对应的布局文件解析结束，并根据参数配置决定是否直接添加在`ViewGroup`根布局中。
+
+`LayoutInlater`的设计流程到此就结束了吗，当然不是，恰恰相反，更精彩更巧妙设计的闪光点还尚未登场。
+
+## 拦截机制和解耦策略
+
+### 抛出问题
+
+读者需要清楚的是，到目前为止，我们的设计还遗留了2个明显的缺陷：
+
+* 1.布局的加载流程中，每一个`View`的实例化都依赖了`Java`的反射机制，这意味着额外性能的损耗；
+* 2.如果在`xml`布局中声明了`fragment`标签，会导致模块之间极高的耦合。
+
+什么叫做 **fragment标签会导致模块之间极高的耦合** ？举例来说，开发者在`layout`文件中声明这样一个`Fragment`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- 声明一个fragment -->
+    <fragment
+        android:id="@+id/fragment"
+        android:name="com.github.qingmei2.myapplication.AFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</android.support.constraint.ConstraintLayout>
+```
+
+看起来似乎没有什么问题，但读者认真思考会发现，如果这是一个v4包的`Fragment`，是否意味着`LayoutInflater`额外增加了对`Fragment`类的依赖，类似这样：
+
+```java
+// LayoutInflater类
+void rInflate(XmlPullParser parser, View parent, Context context, AttributeSet attrs) {
+  // 1.解析当前控件
+  while (parser.next()!= XmlPullParser.END_TAG) {
+    //【注意】2.如果标签是一个Fragment，反射生成Fragment并返回
+    if (name == "fragment") {
+      Fragment fragment = clazz.newInstance();
+      // .....还会关联到SupportFragmentManager、FragmentTransaction的依赖！
+      supportFragmentManager.beginTransaction().add(....).commit();
+      return;
+    }
+
+    final View view = createViewFromTag(parent, name, context, attrs);
+    final ViewGroup viewGroup = (ViewGroup) parent;
+    final ViewGroup.LayoutParams params = viewGroup.generateLayoutParams(attrs);
+    // 3.解析子布局
+    rInflateChildren(parser, view, attrs, true);
+    // 所有子布局解析结束，将当前控件及布局参数添加到父布局中
+    viewGroup.addView(view, params);
+  }
+}
+```
+
+这导致了`LayoutInflater`在解析`fragment`标签过程中，强制依赖了很多设计者不希望的依赖（比如v4包下`Fragment`相关类），继续往下思考的话，还会遇到更多的问题，这里不再引申。
+
+那么如何解决这样的两个问题呢？
+
+### 解决思路
+
+考虑到 **性能优化** 和 **可扩展性**，设计者为`LayoutInflater`设计了一个`LayoutInflater.Factory`接口，该接口设计得非常巧妙：在`xml`解析过程中，开发者可以通过配置该接口对`View`的创建过程进行拦截：**通过new的方式创建控件以避免大量地使用反射**，亦或者 **额外配置特殊标签的解析逻辑以创建特殊组件** ：
+
+```java
+public abstract class LayoutInflater {
+  private Factory mFactory;
+  private Factory2 mFactory2;
+  private Factory2 mPrivateFactory;
+
+  public void setFactory(Factory factory) {
+    //...
+  }
+
+  public void setFactory2(Factory2 factory) {
+      // Factory 只能被set一次
+      if (mFactorySet) {
+          throw new IllegalStateException("A factory has already been set on this LayoutInflater");
+      }
+      mFactorySet = true;
+      mFactory = mFactory2 = factory;
+      // ...
+  }
+
+  public interface Factory {
+    public View onCreateView(String name, Context context, AttributeSet attrs);
+  }
+
+  public interface Factory2 extends Factory {
+    public View onCreateView(View parent, String name, Context context, AttributeSet attrs);
+  }
+}
+```
+
+正如上文所说的，`Factory`接口的意义是在`xml`解析过程中，开发者可以通过配置该接口对`View`的创建过程进行拦截，对于`View`的实例化，最终实现的伪代码如下：
+
+```java
+View createViewFromTag() {
+  View view;
+  // 1. 如果mFactory2不为空, 用mFactory2 拦截创建 View
+  if (mFactory2 != null) {
+      view = mFactory2.onCreateView(parent, name, context, attrs);
+  // 2. 如果mFactory不为空, 用mFactory 拦截创建 View
+  } else if (mFactory != null) {
+      view = mFactory.onCreateView(name, context, attrs);
+  } else {
+      view = null;
+  }
+
+  // 3. 如果经过拦截机制之后，view仍然是null，再通过系统反射的方式，对View进行实例化
+  if (view == null) {
+      view = createView(name, null, attrs);
+  }
+}
+```
+
+理解了`LayoutInflater.Factory`接口设计的思路，接下来一起来思考如何解决上文中提到的2个问题。
+
+### 减少反射次数
+
+`AppCompatActivity`的源码中隐晦地配置`LayoutInflater.Factory`减少了大量反射创建控件的情况——设计者的思路是，在`AppCompatActivity`的`onCreate()`方法中，为`LayoutInflater`对象调用了`setFactory2()`方法：
+
+```java
+// AppCompatActivity类
+@Override
+protected void onCreate(@Nullable Bundle savedInstanceState) {
+    getDelegate().installViewFactory();
+    //...
+}
+
+// AppCompatDelegateImpl类
+@Override
+public void installViewFactory() {
+    LayoutInflater layoutInflater = LayoutInflater.from(mContext);
+    if (layoutInflater.getFactory() == null) {
+      LayoutInflaterCompat.setFactory2(layoutInflater, this);
+    }
+}
+```
+
+配置之后，在`inflate()`过程中，系统的基础控件的实例化都通过代码拦截，并通过`new`的方式进行返回：
+
+
+```java
+switch (name) {
+    case "TextView":
+        view = new AppCompatTextView(context, attrs);
+        break;
+    case "ImageView":
+        view = new AppCompatImageView(context, attrs);
+        break;
+    case "Button":
+        view = new AppCompatButton(context, attrs);
+        break;
+    case "EditText":
+        view = new AppCompatEditText(context, attrs);
+        break;
+    // ...
+    // Android 基础组件都通过new方式进行创建
+}
+```
+
+源码也说明了，即使开发者在`xml`文件中配置的是`Button`，`setContentView()`之后，生成的控件其实是`AppCompatButton`, `TextView`或者`ImageView`亦然，在避免额外的性能损失的同时，也保证了`Android`版本的向下兼容。
+
+### 特殊标签的解析策略
+
+为什么`Fragment`没有定义类似`void setContentView(R.layout.xxx)`的函数对布局进行填充，而是使用了`View onCreateView()`这样的函数，让开发者填充并返回一个对应的`View`呢？
+
+原因就在于在布局填充的过程中，`Fragment`最终被视为一个子控件并添加到了`ViewGroup`中，设计者将`FragmentManagerImpl`作为`FragmentManager`的实现类，同时实现了`LayoutInflater.Factory2`接口。
+
+而在布局文件中`fragment`标签解析的过程中，实际上是调用了`FragmentManagerImpl.onCreateView()`函数，生成了`Fragment`之后并将`View`返回，跳过了系统反射生成`View`相关的逻辑:
+
+```java
+# android.support.v4.app.FragmentManager$FragmentManagerImpl
+@Override
+public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+   if (!"fragment".equals(name)) {
+       return null;
+   }
+   // 如果标签是`fragment`，生成Fragment，并返回Fragment的Root
+   return fragment.mView;
+}
+```
+
+通过定义`LayoutInflater.Factory`接口，设计者将`Fragment`的功能抽象为一个`View`（虽然`Fragment`并不是一个`View`），并交给`FragmentManagerImpl`进行处理，减少了模块之间的耦合，可以说是非常优秀的设计。
+
+> 实际上`LayoutInflater.Factory`接口的设计还有更多细节（比如`LayoutInflater.FactoryMerger`类），篇幅原因，本文不赘述，有兴趣的读者可以研究一下。
+
+## 小结
+
+`LayoutInflater`整体的设计非常复杂且巧妙，从应用启动到进程间通信，从组件的启动再到组件UI的渲染，都可以看到`LayoutInflater`的身影，因此非常值得认真学习一番，建议读者参考本文开篇的思维导图并结合`Android`源码进行整体小结。
+
+## 参考
+
+* Android源码
+* [Android探究LayoutInflater setFactory](https://blog.csdn.net/lmj623565791/article/details/51503977)
+* [LayoutInflater——你应该知道的一点知识](https://www.jianshu.com/p/c29ec7e79d0d)
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://juejin.im/user/588555ff1b69e600591e8462/posts) 或者 [Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/android-programming-profile)
+* [关于文章纠错](https://github.com/qingmei2/Programming-life/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/Programming-life/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
