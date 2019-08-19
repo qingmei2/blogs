@@ -34,7 +34,7 @@
 
 对于`LayoutInflater`整体不甚熟悉的开发者而言，本小节文字描述似乎晦涩难懂，且难免有是否过度设计的疑惑，但这些文字的本质却是布局填充流程整体的设计思想，**读者不应该将本文视为源码分析，而应该将自己代入到设计的过程中** 。
 
-## 创建流程的设计与实现
+## 创建流程
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/layoutInflater/image.u70digob65.png)
 
@@ -76,23 +76,142 @@ class ContextImpl extends Context {
 
 这种设计使得 **系统服务的注册**（`SystemServiceRegistry`类） 和 **系统服务的获取**（`ContextImpl`类） 在代码中只有一处声明和调用，大幅降低了模块之间的耦合。
 
-每当一个组件（如`Activity`）被创建，都为其创建一个对应的`ContextImpl`实例，当组件需要获取系统服务时，则交给了`ContextImpl`去处理:
+### 3.ContextWrapper：Context的装饰器
+
+`ContextWrapper`则是`Context`的装饰器，当组件需要获取系统服务时交给`ContextImpl`成员处理，伪代码实现如下：
 
 ```java
-// Activity 是 ContextWrapper的子类
+// class Activity extends ContextWrapper
 class ContextWrapper extends Context {
     // 1.将 ContextImpl 作为成员进行存储
-    public ContextWrapper(Context base) {
+    public ContextWrapper(ContextImpl base) {
         mBase = base;
     }
 
-    // 2.该成员即 ContextImpl
-    Context mBase;
+    ContextImpl mBase;
 
-    // 3.系统服务的获取实际上是交给了ContextImpl
+    // 2.系统服务的获取统一交给了ContextImpl
     @Override
     public Object getSystemService(String name) {
       return mBase.getSystemService(name);
     }
 }
 ```
+
+`ContextWrapper`装饰器的初始化如何实现呢？每当一个`ContextWrapper`组件（如`Activity`）被创建时，都为其创建一个对应的`ContextImpl`实例，伪代码实现如下:
+
+```java
+public final class ActivityThread {
+
+  // 每当`Activity`被创建
+  private Activity performLaunchActivity() {
+      // ....
+      // 1.实例化 ContextImpl
+      ContextImpl appContext = new ContextImpl();
+      // 2.将 activity 注入 ContextImpl
+      appContext.setOuterContext(activity);
+      // 3.将 ContextImpl 也注入到 activity中
+      activity.attach(appContext, ....);
+      // ....
+  }
+}
+```
+
+> 读者应该注意到了第3步的`activity.attach(appContext, ...)`函数，该函数很重要，在【布局流程】一节中会继续引申。
+
+### 4.组件的局部单例
+
+读者也许注意到，对于单个`Activity`而言，多次调用`activity.getLayoutInflater()`或者`LayoutInflater.from(activity)`，获取到的`LayoutInflater`对象都是单例的——对于涉及到了跨进程通信的系统服务而言，通过作用域内的单例模式保证以节省性能是完全可以理解的。
+
+设计者将对应的代码放在了`ContextWrapper`的子类`ContextThemeWrapper`中，该类用于方便开发者为`Activity`配置自定义的主题，除此之外还通过一个成员持有了一个`LayoutInflater`对象：
+
+```java
+// class Activity extends ContextThemeWrapper
+public class ContextThemeWrapper extends ContextWrapper {
+  private Resources.Theme mTheme;
+  private LayoutInflater mInflater;
+
+  @Override
+  public Object getSystemService(String name) {
+      // 保证 LayoutInflater 的局部单例
+      if (LAYOUT_INFLATER_SERVICE.equals(name)) {
+          if (mInflater == null) {
+              mInflater = LayoutInflater.from(getBaseContext()).cloneInContext(this);
+          }
+          return mInflater;
+      }
+      return getBaseContext().getSystemService(name);
+  }
+}
+```
+
+而无论`activity.getLayoutInflater()`还是`LayoutInflater.from(activity)`，其内部最终都执行的是`ContextThemeWrapper#getSystemService`(前者和`PhoneWindow`还有点关系，这个后文会提), 因此获取到的`LayoutInflater`自然是同一个对象了：
+
+```Java
+public abstract class LayoutInflater {
+  public static LayoutInflater from(Context context) {
+      return (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+  }
+}
+```
+
+## 布局填充流程
+
+上一节我们提到了`Activity`启动的过程，这个过程中不可避免的要创建一个窗口，最终UI的布局都要展示在这个窗口上，`Android`中通过定义了`PhoneWindow`类对这个UI的窗口进行描述。
+
+### 1.PhoneWindow：setContentView()的真正实现
+
+`Activity`将布局填充相关的逻辑委托给了`PhoneWindow`，`Activity`的`setContentView()`函数，其本质是调用了`PhoneWindow`的`setContentView()`函数。
+
+```java
+public class PhoneWindow extends Window {
+
+   public PhoneWindow(Context context) {
+       super(context);
+       mLayoutInflater = LayoutInflater.from(context);
+   }
+
+   // Activity.setContentView 实际上是调用了 PhoneWindow.setContentView()
+   @Override
+   public void setContentView(int layoutResID) {
+       // ...
+       mLayoutInflater.inflate(layoutResID, mContentParent);
+   }
+}
+```
+
+读者需要清楚，`activity.getLayoutInflater()`和`activity.setContentView()`等方法都使用到了`PhoneWindow`内部的`LayoutInflater`对象，而`PhoneWindow`内部对`LayoutInflater`的实例化，仍然是调用`context.getSystemService()`方法，因此和上一小节的结论并不冲突：
+
+> 而无论`activity.getLayoutInflater()`还是`LayoutInflater.from(activity)`，其内部最终都执行的是`ContextThemeWrapper#getSystemService`。
+
+`PhoneWindow`是如何实例化的呢，读者认真思考可知，一个`Activity`对应一个`PhoneWindow`的UI窗口，因此当`Activity`被创建时，`PhoneWindow`就被需要被创建了，执行时机就在上文的`ActivityThread.performLaunchActivity()`中：
+
+```java
+public final class ActivityThread {
+
+  // 每当`Activity`被创建
+  private Activity performLaunchActivity() {
+      // ....
+      // 3.将 ContextImpl 也注入到 activity中
+      activity.attach(appContext, ....);
+      // ....
+  }
+}
+
+public class Activity extends ContextThemeWrapper {
+
+  final void attach(Context context, ...) {
+    // ...
+    // 初始化 PhoneWindow
+    // window构造方法中又通过 Context 实例化了 LayoutInflater
+    PhoneWindow mWindow = new PhoneWindow(this, ....);
+  }
+}
+```
+
+设计到这里，读者应该对`LayoutInflater`的整体流程已经有了一个初步的掌握，需要清楚的两点是：
+
+* 1.无论是哪种方式获取到的`LayoutInflater`,都是通过`ContextImpl.getSystemService()`获取的，并且在`Activity`等组件的生命周期内保持单例；  
+* 2.即使是`Activity.setContentView()`函数,本质上也还是通过`LayoutInflater.inflate()`函数对布局进行解析和创建。
+
+### 2.inflate()流程的设计和实现
