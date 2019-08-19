@@ -306,7 +306,7 @@ final void rInflateChildren(XmlPullParser parser, View parent, AttributeSet attr
 
 至此，一般情况下的布局填充流程到此结束，`inflate()`方法执行完毕，对应的布局文件解析结束，并根据参数配置决定是否直接添加在`ViewGroup`根布局中。
 
-`LayoutInlater`的设计流程到此就结束了吗，当然不是，恰恰相反，更精彩更巧妙设计的闪光点还尚未登场。
+`LayoutInlater`的设计流程到此就结束了吗，当然不是，更精彩更巧妙的设计还尚未登场。
 
 ## 拦截机制和解耦策略
 
