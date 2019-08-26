@@ -6,25 +6,7 @@
 
 我是 [却把清梅嗅](https://github.com/qingmei2), `Android`开发者，爱好 **逻辑推理游戏** 和 **写作**。
 
-在过去的时间里，我持续归纳总结了数十篇学习博客，现在我将它们统一总结到这里，以后所有的文章也会第一时间在这里进行更新，因为我发现：
-
-**用`Issues`管理博客实在是太方便了**！
-
-## 如何使用？
-
-`Issues`自带筛选功能，你可以通过自定义筛选条件查看指定的博客系列：
-
-* 1.首先进入 [issues](https://github.com/qingmei2/android-programming-profile/issues) 主页面，这是所有博客的列表；
-
-![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.db8hycztu0h.png)
-
-* 2.通过`Labels`标签查看指定分类的博客，比如说我想查看 [Jetpack](https://github.com/qingmei2/android-programming-profile/issues?q=is%3Aopen+is%3Aissue+label%3A%22Android+Jetpack%22) 系列的文章：
-
-![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.07wa5qlsl5df.png)
-
-* 3.现在你看到了你想看的系列内容：
-
-![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.76d5yj84rjd.png)
+在过去的时间里，我持续归纳总结了数十篇学习博客，现在我将它们统一总结到这里，以后所有的文章也会第一时间在这里进行更新。
 
 ## 博客大纲
 
@@ -72,6 +54,22 @@
 
 
 首页我只放出了部分博文，所有文章你都可以在 **[这里](https://github.com/qingmei2/Programming-life/tree/master/src)** 找到，**更多文章持续更新中......**
+
+## 如何使用`Issues`阅读博客？
+
+`Issues`自带筛选功能，你可以通过自定义筛选条件查看指定的博客系列：
+
+* 1.首先进入 [issues](https://github.com/qingmei2/android-programming-profile/issues) 主页面，这是所有博客的列表；
+
+<img width="441" height="312" src="https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.db8hycztu0h.png"/>
+
+* 2.通过`Labels`标签查看指定分类的博客，比如说我想查看 [Jetpack](https://github.com/qingmei2/android-programming-profile/issues?q=is%3Aopen+is%3Aissue+label%3A%22Android+Jetpack%22) 系列的文章：
+
+<img width="638" height="371" src="https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.07wa5qlsl5df.png"/>
+
+* 3.现在你看到了你想看的系列内容： 663 413
+
+<img width="663" height="413" src="https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/desc/image.76d5yj84rjd.png"/>
 
 ## 关于我
 
