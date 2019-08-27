@@ -1,5 +1,13 @@
 # 反思|Android 事件分发机制的设计与实现
 
+## 参考
+
+* Android 源码
+* [Android应用程序输入事件分发和处理机制](https://www.kancloud.cn/alex_wsc/androids/472164)
+* [View InputEvent事件投递源码分析 1-4](https://www.jianshu.com/p/b7f33f46d33c)
+* [Android中的ViewRootImpl类源码解析](https://blog.csdn.net/qianhaifeng2012/article/details/51737370)
+
+
 > **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md) 。
 
 ## 概述
@@ -37,3 +45,76 @@
 读到这里，读者应该觉得非常熟悉了，但实际上这里描述的事件分发流程只是 *事件分发流程* 整体的一部分，即 *UI层级事件分发* ——读者需要理解，`ViewRootImpl`从`InputManager`获取到输入事件时，会针对输入事件通过一个复杂的 **责任链** 进行底层的递归，将不同类型的输入事件进行不同策略的分发（比如 **屏幕触摸事件** 和 **键盘输入事件** ），而只有部分符合条件的 **屏幕触摸事件** 最终才有可能进入到UI层级的事件分发。
 
 为了方便理解，本文使用以下两个词汇对上文两个斜体词汇进行描述：**应用整体的事件分发** 和 **UI层级的事件分发** ——需要重申的是，这两个词汇虽然会被分开讲解，但其本质仍然属于一个完整 **事件分发的责任链**，后者只是前者的一小部分而已。
+
+## 架构设计
+
+### 1.InputEvent：输入事件分类概述
+
+`Android`系统中将输入事件定义为`InputEvent`，而`InputEvent`根据输入事件的类型又分为了`KeyEvent`和`MotionEvent`：
+
+```java
+// 输入事件的基类
+public abstract class InputEvent implements Parcelable { }
+
+public class KeyEvent extends InputEvent implements Parcelable { }
+
+public final class MotionEvent extends InputEvent implements Parcelable { }
+```
+
+`KeyEvent`对应了键盘的输入事件，那么什么是`MotionEvent`？顾名思义，`MotionEvent`就是移动事件，鼠标、笔、手指、轨迹球等相关输入设备的事件都属于`MotionEvent`，本文我们简单地将其视为 **屏幕触摸事件**。
+
+用户的输入种类繁多，由此可见，`Android`输入系统的设计中，将 **输入事件** 抽象为`InputEvent`是有必要的。
+
+### 2.InputManager：系统输入管理器
+
+`Android`系统的设计中，`InputEvent`统一由系统输入管理器`InputManager`进行分发。在这里`InputManager`是`native`层级的一个类，负责与硬件通信并接收输入事件。
+
+那么`InputManager`是如何初始化的呢？这里就要涉及到`Java`层级的`SystemServer`了，我们直到`SystemServer`进程中包含着各种各样的系统服务，比如`ActivityManagerService`、`WindowManagerService`等等，`SystemServer`由`zygote`进程启动, 启动过程中对`WindowManagerService`和`InputManagerService`进行了初始化:
+
+```java
+public final class SystemServer {
+
+  private void startOtherServices() {
+     // 初始化 InputManagerService
+     InputManagerService inputManager = new InputManagerService(context);
+     // WindowManagerService 持有了 InputManagerService
+     WindowManagerService wm = WindowManagerService.main(context, inputManager,...);
+
+     inputManager.setWindowManagerCallbacks(wm.getInputMonitor());
+     inputManager.start();
+  }
+}
+```
+
+`InputManagerService`的构造器中，通过调用native函数，通知`native`层级初始化`InputManager`:
+
+```java
+public class InputManagerService extends IInputManager.Stub {
+
+  public InputManagerService(Context context) {
+    // ...通知native层初始化 InputManager
+    mPtr = nativeInit(this, mContext, mHandler.getLooper().getQueue());
+  }
+
+  // native 函数
+  private static native long nativeInit(InputManagerService service, Context context, MessageQueue messageQueue);
+}
+```
+
+`SystemServer`会启动窗口管理服务`WindowManagerService`，`WindowManagerService`在启动的时候就会通过`InputManagerService`启动系统输入管理器`InputManager`来总负责监控键盘消息。
+
+对于本文而言，`framework`层级相关如`WindowManagerService`（窗口管理服务）、`native`层级的源码、`SystemServer` 亦或者 `Binder`跨进程通信并非重点，读者仅需了解 **系统服务的启动流程** 和 **层级关系** 即可，参考下图：
+
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/event_dispatcher/image.2m7iml9m5qg.png)
+
+### 3.ViewRootImpl：窗口服务与窗口的纽带
+
+`InputManager`并将事件分发给当前激活的窗口（`Window`）处理，这里我们将前者理解为系统层级的 **服务**，将后者理解为应用层级的 **窗口**, 因此需要有一个中介负责 **服务** 和 **窗口** 之间的通信，于是`ViewRootImpl`类应运而生。
+
+`ViewRootImpl`作为链接`WindowManager`和`DecorView`的纽带，同时实现了`ViewParent`接口，`ViewRootImpl`作为整个控件树的根部，它是`View Tree`正常运作的动力所在，控件的测量、布局、绘制以及输入事件的分发都由`ViewRootImpl`控制。
+
+由此可见，`ViewRootImpl`确实很重要，那么`ViewRootImpl`是如何被创建和初始化的，而 **服务** 和 **窗口** 之间的通信又是如何建立的呢？
+
+## 建立通信
+
+我们知道，`ActivityThread`负责控制`Activity`的启动过程，在`ActivityThread.performLaunchActivity()`流程中，`ActivityThread`会针对`Activity`创建对应的`PhoneWindow`和`DecorView`实例，而在`ActivityThread.handleResumeActivity()`流程中，`ActivityThread`会将`View`
