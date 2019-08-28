@@ -131,8 +131,10 @@ public class PhoneWindow extends Window {
 * 1.在接收到输入事件时，`DecorView`不同于其它`View`，它需要先将事件转发给最外层的`Activity`，使得开发者可以通过重写`Activity.onTouchEvent()`函数以达到对当前屏幕触摸事件拦截控制的目的，这里`DecorView`履行了自身的职责；
 * 2.从`Window`接收到事件时，作为`View`树的根节点，将事件分发给子`View`，这里`DecorView`履行了一个普通的`View`的职责。
 
-实际上，不只是`DecorView`，接下来 `ViewGroup -> View` 之间的事件分发中也运用到了这个技巧，对于`ViewGroup`的事件分发来说，在 **递流程** 中，其本身是上游的`ViewGroup`，需要将事件分发给下游的子`View`（调用自定义`this.dispatchTouchEvent(event)`）；同时，在 **归流程** 中，其本身也是一个`View`，需要调用`View`自身的方法已决定是否消费该事件（调用`super.dispatchTouchEvent(event)`），并将结果返回上游。**读者需认真理解这个设计思想，下文中`View`层的事件分发的流程也是基于这个思想而设计的**。
+实际上，不只是`DecorView`，接下来 `ViewGroup -> View` 之间的事件分发中也运用到了这个技巧，对于`ViewGroup`的事件分发来说，在 **递流程** 中，其本身是上游的`ViewGroup`，需要将事件分发给下游的子`View`（调用自定义`this.dispatchTouchEvent(event)`）；同时，在 **归流程** 中，其本身也是一个`View`，需要调用`View`自身的方法已决定是否消费该事件（调用`super.dispatchTouchEvent(event)`），并将结果返回上游—— **读者需认真理解这个设计思想，下文中`View`层的事件分发的流程也是基于这个思想而设计的**。
 
-同时，读者应该已经理解，平时我们所说 `ViewGroup -> View` 之间的事件分发也只是 **UI层的事件分发** 的一个环节，而 **UI层的事件分发** 又只是 **应用层完整事件分发** 的一个小环节，更遑论`Native`层和应用层之间的分发机制了。
+同时，读者应该也已理解，平时我们所说 `ViewGroup -> View` 之间的事件分发也只是 **UI层的事件分发** 的一个环节，而 **UI层的事件分发** 又只是 **应用层完整事件分发** 的一个小环节，更遑论`Native`层和应用层之间的事件分发机制了。
 
 ## UI层级事件分发
+
+本小节将 **UI层级事件分发** 归纳为`ViewGroup -> View` 之间的事件分发，

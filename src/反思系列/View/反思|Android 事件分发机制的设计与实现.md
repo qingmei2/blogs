@@ -4,9 +4,9 @@
 
 ## 概述
 
-`Android`体系本身非常宏大，源码中值得思考和借鉴之处众多。以事件分发完整流程为例，其整个流程涉及到了 **系统启动流程**（`SystemServer`）、**输入管理**(`InputManager`)、**系统服务和UI的通信**（`ViewRootImpl` + `Window` + `WindowManagerService`）、**输入事件分发** 等等一系列复杂的逻辑。
+`Android`体系本身非常宏大，源码中值得思考和借鉴之处众多。以整体事件分发机制为例，其整个流程涉及到了 **系统启动流程**（`SystemServer`）、**输入管理**(`InputManager`)、**系统服务和UI的通信**（`ViewRootImpl` + `Window` + `WindowManagerService`）、**事件分发** 等等一系列的环节。
 
-对于 **输入事件分发** 而言，不可否认非常重要，但`Android`系统整体的事件分发流程也是成为一名优秀`Android`工作者需要去了解的，本文笔者将针对`Android` **事件分发** 的整体机制和设计思路进行描述，其整体结构如下图：
+对于 **事件分发** 环节而言，不可否认非常重要，但`Android`系统 **整体事件分发机制** 也是一名优秀`Android`工作者需要去了解的，本文笔者将针对`Android` **事件分发整体机制和设计思路** 进行描述，其整体结构如下图：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/core/event_dispatcher/image.0018xsd5yv1ynl.png)
 
@@ -332,3 +332,18 @@ final class ViewPostImeInputStage extends InputStage {
 * [Android应用程序输入事件分发和处理机制](https://www.kancloud.cn/alex_wsc/androids/472164)
 * [View InputEvent事件投递源码分析 1-4](https://www.jianshu.com/p/b7f33f46d33c)
 * [Android中的ViewRootImpl类源码解析](https://blog.csdn.net/qianhaifeng2012/article/details/51737370)
+
+本文引用了部分文章的部分图片和部分代码片段，在此深表感谢，若有侵权还请告知，笔者将在第一时间进行修改。
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://juejin.im/user/588555ff1b69e600591e8462/posts) 或者 [Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
