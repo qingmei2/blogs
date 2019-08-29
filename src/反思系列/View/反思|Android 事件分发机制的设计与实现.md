@@ -22,7 +22,7 @@
 
 ### 2.建立通信
 
-`ActivityThread`负责控制`Activity`的启动过程，在`performLaunchActivity()`流程中，`ActivityThread`会针对`Activity`创建对应的`PhoneWindow`和`DecorView`实例，而之后的`handleResumeActivity()`流程中则会将`PhoneWindow`（ **应用** ）和系统硬件层级的`InputManagerService`( **系统服务** )通信建立对应的连接，保证UI可见并能够对输入事件进行正确的分发，这之后`Activity`就会成为可见的。
+`ActivityThread`负责控制`Activity`的启动过程，在`performLaunchActivity()`流程中，`ActivityThread`会针对`Activity`创建对应的`PhoneWindow`和`DecorView`实例，而之后的`handleResumeActivity()`流程中则会将`PhoneWindow`（ **应用** ）和`InputManagerService`( **系统服务** )通信以建立对应的连接，保证UI可见并能够对输入事件进行正确的分发，这之后`Activity`就会成为可见的。
 
 如何在应用程序和系统服务之间建立通信？`Android`中`Window`和`InputManagerService`之间的通信实际上使用的`InputChannel`,`InputChannel`是一个`pipe`，底层实际是通过`socket`进行通信：
 
@@ -32,7 +32,7 @@
 
 ### 3.事件分发
 
-与`View`的 [布局流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/反思系列/View/反思%7CAndroid%20View机制设计与实现：布局流程.md) 和 [测量流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/View/%E5%8F%8D%E6%80%9D%7CAndroid%20View%E6%9C%BA%E5%88%B6%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%EF%BC%9A%E6%B5%8B%E9%87%8F%E6%B5%81%E7%A8%8B.md) 相同，`Android`事件分发处理机制也使用了 **递归** 的思想，因为一个事件最多只有一个消费者，所以通过责任链的方式将事件自顶向下进行传递，找到事件的消费者（这里是指一个`View`）之后，再自底向上返回结果。
+与`View`的 [布局流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/反思系列/View/反思%7CAndroid%20View机制设计与实现：布局流程.md) 和 [测量流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/View/%E5%8F%8D%E6%80%9D%7CAndroid%20View%E6%9C%BA%E5%88%B6%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%EF%BC%9A%E6%B5%8B%E9%87%8F%E6%B5%81%E7%A8%8B.md) 相同，`Android`事件分发机制也使用了 **递归** 的思想，因为一个事件最多只有一个消费者，所以通过责任链的方式将事件自顶向下进行传递，找到事件的消费者（这里是指一个`View`）之后，再自底向上返回结果。
 
 读到这里，读者应该觉得非常熟悉了，但实际上这里描述的事件分发流程为UI层级的事件分发——它只是事件分发流程整体的一部分。读者需要理解，`ViewRootImpl`从`InputManager`获取到新的输入事件时，会针对输入事件通过一个复杂的 **责任链** 进行底层的递归，将不同类型的输入事件（比如 **屏幕触摸事件** 和 **键盘输入事件** ）进行不同策略的分发，而只有部分符合条件的 **屏幕触摸事件** 最终才有可能进入到UI层级的事件分发：
 
@@ -40,7 +40,7 @@
 
 > 如图所示，蓝色箭头描述的流程才是UI层级的事件分发。
 
-为了方便理解，本文使用以下两个词汇对上文两个斜体词汇进行描述：**应用整体的事件分发** 和 **UI层级的事件分发** ——需要重申的是，这两个词汇虽然会被分开讲解，但其本质仍然属于一个完整 **事件分发的责任链**，后者只是前者的一小部分而已。
+为了方便理解，本文使用了以下两个词汇：**应用整体的事件分发** 和 **UI层级的事件分发** ——需要重申的是，这两个词汇虽然被分开讲解，但其本质仍然属于一个完整 **事件分发的责任链**，后者只是前者的一小部分而已。
 
 ## 架构设计
 
@@ -65,7 +65,7 @@ public final class MotionEvent extends InputEvent implements Parcelable { }
 
 `Android`系统的设计中，`InputEvent`统一由系统输入管理器`InputManager`进行分发。在这里`InputManager`是`native`层级的一个类，负责与硬件通信并接收输入事件。
 
-那么`InputManager`是如何初始化的呢？这里就要涉及到`Java`层级的`SystemServer`了，我们直到`SystemServer`进程中包含着各种各样的系统服务，比如`ActivityManagerService`、`WindowManagerService`等等，`SystemServer`由`zygote`进程启动, 启动过程中对`WindowManagerService`和`InputManagerService`进行了初始化:
+那么`InputManager`是如何初始化的呢？这里就要涉及到`Java`层级的`SystemServer`了，我们知道`SystemServer`进程中包含着各种各样的系统服务，比如`ActivityManagerService`、`WindowManagerService`等等，`SystemServer`由`zygote`进程启动, 启动过程中对`WindowManagerService`和`InputManagerService`进行了初始化:
 
 ```java
 public final class SystemServer {
@@ -97,7 +97,7 @@ public class InputManagerService extends IInputManager.Stub {
 }
 ```
 
-`SystemServer`会启动窗口管理服务`WindowManagerService`，`WindowManagerService`在启动的时候就会通过`InputManagerService`启动系统输入管理器`InputManager`来总负责监控键盘消息。
+`SystemServer`会启动窗口管理服务`WindowManagerService`，`WindowManagerService`在启动的时候就会通过`InputManagerService`启动系统输入管理器`InputManager`来负责监控键盘消息。
 
 对于本文而言，`framework`层级相关如`WindowManagerService`（窗口管理服务）、`native`层级的源码、`SystemServer` 亦或者 `Binder`跨进程通信并非重点，读者仅需了解 **系统服务的启动流程** 和 **层级关系** 即可，参考下图：
 
@@ -105,9 +105,9 @@ public class InputManagerService extends IInputManager.Stub {
 
 ### 3.ViewRootImpl：窗口服务与窗口的纽带
 
-`InputManager`并将事件分发给当前激活的窗口（`Window`）处理，这里我们将前者理解为系统层级的 **（窗口）服务**，将后者理解为应用层级的 **窗口**, 因此需要有一个中介负责 **服务** 和 **窗口** 之间的通信，于是`ViewRootImpl`类应运而生。
+`InputManager`将事件分发给当前激活的窗口（`Window`）处理，这里我们将前者理解为系统层级的 **（窗口）服务**，将后者理解为应用层级的 **窗口**, 因此需要有一个中介负责 **服务** 和 **窗口** 之间的通信，于是`ViewRootImpl`类应运而生。
 
-`ViewRootImpl`作为链接`WindowManager`和`DecorView`的纽带，同时实现了`ViewParent`接口，`ViewRootImpl`作为整个控件树的根部，它是`View Tree`正常运作的动力所在，控件的测量、布局、绘制以及输入事件的分发都由`ViewRootImpl`控制。
+`ViewRootImpl`作为链接`WindowManager`和`DecorView`的纽带，同时实现了`ViewParent`接口，`ViewRootImpl`作为整个控件树的根部，它是`View`树正常运作的动力所在，控件的测量、布局、绘制以及输入事件的分发都由`ViewRootImpl`控制。
 
 那么`ViewRootImpl`是如何被创建和初始化的，而 **（窗口）服务** 和 **窗口** 之间的通信又是如何建立的呢？
 
@@ -168,7 +168,7 @@ public final class ViewRootImpl {
 
 ### 2.通信的建立
 
-完成了`ViewRootImpl`的创建之后，如何完成系统输入服务和应用程序进程的链接呢？
+完成了`ViewRootImpl`的创建之后，如何完成系统输入服务和应用程序进程的连接呢？
 
 `Android`中`Window`和`InputManagerService`之间的通信实际上使用的`InputChannel`,`InputChannel`是一个`pipe`，底层实际是通过`socket`进行通信。在`ViewRootImpl.setView()`过程中，也会同时注册`InputChannel`：
 
@@ -201,7 +201,7 @@ public final class ViewRootImpl {
 
 ## 应用整体的事件分发
 
-`App`端与服务端建立了双向通信之后，`InputManager`就能够将产生的输入事件从底层硬件分发过来，`Android`提供了`InputEventReceiver`类，以负责接收分发这些消息：
+`App`端与服务端建立了双向通信之后，`InputManager`就能够将产生的输入事件从底层硬件分发过来，`Android`提供了`InputEventReceiver`类，以接收分发这些消息：
 
 ```java
 public abstract class InputEventReceiver {
@@ -420,7 +420,7 @@ final class ViewPostImeInputStage extends InputStage {
 
 ### DecorView的双重职责
 
-`DecorView`作为`View`树的根节点，接收到屏幕触摸事件`MotionEvent`时，应该直接通过递归的方式将事件分发给子`View`，这似乎理所当然。但实际设计中，设计者将`DecorView`接收到的事件首先分发给了`Activity`，`Activity`又将事件分发给了其`Window`，最终`Window`才将事件又交回给了`DecorView`，形成了一个小的循环：
+`DecorView`作为`View`树的根节点，接收到屏幕触摸事件`MotionEvent`时，应该通过递归的方式将事件分发给子`View`，这似乎理所当然。但实际设计中，设计者将`DecorView`接收到的事件首先分发给了`Activity`，`Activity`又将事件分发给了其`Window`，最终`Window`才将事件又交回给了`DecorView`，形成了一个小的循环：
 
 ```java
 // 伪代码
@@ -639,17 +639,17 @@ public boolean dispatchTouchEvent(MotionEvent event) {
 当然不能，即使是笔者对此也只是初窥门径而已，在撰写本文的过程中，笔者参考了许多优秀的学习资料，同样笔者也不认为本文比这些资料讲解的更透彻，读者可以参考这些资料 ——一千个人有一千个哈姆雷特，也许这些优秀的资料相比本文更适合你呢？
 
 * 1.Android源码
-> 源码永远是学习过程中最好的老师，RTFSC（笑）。
+> 源码永远是学习过程中最好的老师，RTFSC。
 * [2.Android开发艺术探索](https://item.jd.com/11760209.html)
 > 神书，书中 **View的事件分发机制** 一节将源码分析到了极致，讲解的非常透彻，**强烈建议** 建议读者源码阅读时参考这本书。
 * [3.Android应用程序输入事件分发和处理机制](https://www.kancloud.cn/alex_wsc/androids/472164)
 > `framework`层原理分析的神文，懂得自然懂。本文中的部分图片也引自该文。
 * [4.View InputEvent事件投递源码分析 1-4](https://www.jianshu.com/p/b7f33f46d33c)
 > 非常好的博客系列。
-* [Android中的ViewRootImpl类源码解析](https://blog.csdn.net/qianhaifeng2012/article/details/51737370)
+* [5.Android中的ViewRootImpl类源码解析](https://blog.csdn.net/qianhaifeng2012/article/details/51737370)
 > 对`ViewRootImpl`讲解非常透彻的一篇博客，本文对于`ViewRootImpl`的主要职责的描述也是参考了此文。
-* [重学安卓：学习 View 事件分发，就像外地人上了黑车！](https://juejin.im/post/5d3140c951882565dd5a66ef)
-> 非常欣赏 [@KunMinX](https://juejin.im/user/58ab0de9ac502e006975d757) 老师博文的风格，大道至简，此文对事件消费过程中的 **消费** 二字的讲解非常透彻，给予了笔者很多启示——仍需声明，本文不是黑车（笑）。
+* [6.重学安卓：学习 View 事件分发，就像外地人上了黑车！](https://juejin.im/post/5d3140c951882565dd5a66ef)
+> 非常欣赏 [@KunMinX](https://juejin.im/user/58ab0de9ac502e006975d757) 老师博文的风格，大道至简，此文对事件消费过程中的 **消费** 二字的讲解非常透彻，给予了笔者很多启示——另，本文不是黑车（笑）。
 
 ---
 
