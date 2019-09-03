@@ -218,7 +218,7 @@ class PersonsModel {
 
 ### 3.在页面堆栈中导航
 
-当`View`不再使用时，是否还有保留`Presenter`（或`ViewModel`）的必要？比如，用户跳转到了另外一个界面，这导致`Fragment`(`View`)被另外的`Fragment`给`replace`了，因此`Presenter`已经不在被任何`View`持有。
+当`View`不再使用时，是否还有保留`Presenter`（或`ViewModel`）的必要？比如，用户跳转到了另外一个界面，这导致`Fragment`(`View`)被另外的`Fragment`给`replace`了，因此`Presenter`已经不再被任何`View`持有。
 
 如果没有`View`层和`Presenter`进行关联，`Presenter`自然也无法根据业务逻辑，将最新的数据反映在`View`上。但如果用户又回来了怎么办（比如按下后退按钮），是 **重新加载数据** 还是 **重用现有的Presenter**?——这看起来像是一个哲学问题。
 
