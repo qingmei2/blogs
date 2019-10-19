@@ -77,3 +77,62 @@ class MyViewModel : ViewModel() {
 定义好了需求，在正式开始设计Paging之前，首先我们先来回顾一下，普通的列表如何实现数据的动态更新的。
 
 ### 1.4 普通列表的实现方式
+
+我们依然通过 **联系人列表** 作为示例，来描述普通列表 **如何响应数据的动态更新**。
+
+首先，我们需要定义一个`Dao`，这里我们使用了`Room`组件用于 **数据库** 中联系人的查询：
+
+```Kotlin
+@Dao
+interface UserDao {
+  @Query("SELECT * FROM user")
+  fun queryUsers(): LiveData<List<User>>
+}
+```
+
+这里我们返回的是一个`LiveData`，正如我们前文所言，构建一个可观察的对象显然会让数据的处理更加容易。
+
+接下来我们定义好`ViewModel`和`Activity`:
+
+```Kotlin
+class MyViewModel(val dao: UserDao) : ViewModel() {
+  // 1.定义好可观察的LiveData
+  val users: LiveData<List<User>> = dao.queryUsers()
+}
+
+class MyActivity : Activity {
+  val myViewModel: MyViewModel
+  val adapter: ListAdapter
+
+  fun onCreate(bundle: Bundle?) {
+    // 2.在Activity中对LiveData进行订阅
+    myViewModel.users.observe(this) {
+      // 3.每当数据更新，计算新旧数据集的差异，对列表进行更新
+      adapter.submitList(it)
+    }
+  }    
+}
+```
+
+ 这里我们使用到了`ListAdapter`，它是官方基于`RecyclerView.Adapter`的`AsyncListDiffer`封装类，其内创建了`AsyncListDiffer`的示例，以便在后台线程中使用`DiffUtil`计算新旧数据集的差异，从而节省`Item`更新的性能。
+
+> 本文默认读者对`ListAdapter`一定了解，如果不是很熟悉，请参考`DiffUtil`、`AsyncListDiffer`、`ListAdapter`等相关知识点的文章。
+
+当然不可避免的是，我们需要在`ListAdapter`中声明`DiffUtil.ItemCallback`，对数据集的差异计算的逻辑进行补充：
+
+```Kotlin
+class MyAdapter(): ListAdapter<User, UserViewHolder>(
+  object: DiffUtil.ItemCallback<User>() {
+    override fun areItemsTheSame(oldItem: User, newItem: User)
+        = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: User, newItem: User)
+        = oldItem == newItem   
+  }
+) {
+  // ...
+}
+```
+
+That's all, 接下来我们开始思考，新的分页组件如何开始设计。
+
+## 二、分页组件的整体设计
