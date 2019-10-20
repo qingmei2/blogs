@@ -118,7 +118,7 @@ class MyActivity : Activity {
 
 > 本文默认读者对`ListAdapter`一定了解，如果不是很熟悉，请参考`DiffUtil`、`AsyncListDiffer`、`ListAdapter`等相关知识点的文章。
 
-当然不可避免的是，我们需要在`ListAdapter`中声明`DiffUtil.ItemCallback`，对数据集的差异计算的逻辑进行补充：
+此外，我们还需要在`ListAdapter`中声明`DiffUtil.ItemCallback`，对数据集的差异计算的逻辑进行补充：
 
 ```Kotlin
 class MyAdapter(): ListAdapter<User, UserViewHolder>(
@@ -133,6 +133,57 @@ class MyAdapter(): ListAdapter<User, UserViewHolder>(
 }
 ```
 
-That's all, 接下来我们开始思考，新的分页组件如何开始设计。
+That's all, 接下来我们开始思考，新的分页组件应该是什么样的。
 
-## 二、分页组件的整体设计
+## 二、分页组件简介
+
+### 1.核心类：PagedList
+
+上文提到，一个普通的`RecyclerView`展示的是一个列表的数据，比如`List<User>`，但在列表分页的需求中，`List<User>`明显就不太够用了。
+
+为此，`Google`设计出了一个新的角色`PagedList`，顾名思义，该角色的意义就是 **分页列表数据的容器 ** 。
+
+> 既然有了`List`，为什么需要额外设计这样一个`PagedList`的数据结构？本质原因在于加载分页数据的操作是异步的 ，因此定义`PagedList`的第二个作用是 **对分页数据的异步加载** ,这个我们后文再提。
+
+现在，我们的`ViewModel`现在可以定义成这样，因为`PagedList`也作为列表数据的容器（就像`List<User>`一样）：
+
+```Kotlin
+class MyViewModel : ViewModel() {
+  // before
+  // val users: LiveData<List<User>> = dao.queryUsers()
+
+  // after
+  val users: LiveData<PagedList<User>> = dao.queryUsers()
+}
+```
+
+在`ViewModel`中，开发者可以轻易通过对`users`进行订阅以响应分页数据的更新，这个`LiveData`的可观察者是通过`Room`组件创建的，我们来看一下我们的`dao`:
+
+```Kotlin
+@Dao
+interface UserDao {
+  // 注意，这里 LiveData<List<User>> 改成了 LiveData<PagedList<User>>  
+  @Query("SELECT * FROM user")
+  fun queryUsers(): LiveData<PagedList<User>>  
+}
+```
+
+乍得一看似乎理所当然，但实际需求中有一个问题，这里的定义是模糊不清的——对于分页数据而言，不同的业务场景，所需要的分页策略是不同的。那么什么是分页策略呢？
+
+最直接的一点是每页数据的加载数量`PageSize`，不同的项目都会自行规定每页数据量的大小，一页请求15个数据还是20个数据？显然我们目前的代码无法进行配置，这是不合理的。
+
+### 2.数据源: DataSource
+
+我们需要一个角色为`PagedList`容器提供分页数据，那就是数据源`DataSource`。
+
+那么什么是`DataSource`呢？它不应该是 **数据库数据** 或者 **服务端数据**， 而应该是 **数据库数据** 或者 **服务端数据** 的一个快照（`Snapshot`）。
+
+因此，每当`Paging`被告知需要更多数据：“Hi，我需要第45-60个的数据！”——数据源`DataSource`就会将当前`Snapshot`对应索引的数据交给`PagedList`。
+
+但是，每当我们需要构建一个新的`PagedList`时——比如数据已经失效，`DataSource`中旧的数据没有意义了，因此`DataSource`也需要被重置。
+
+在代码中，这意味着新的`DataSource`对象被创建，因此，我们需要提供的不是`DataSource`，而是提供`DataSource`的工厂。
+
+> 为什么要提供`DataSource.Factory`而不是一个`DataSource`? 复用这个`DataSource`不可以吗，当然可以，但是将`DataSource`设置为`immutable`(不可变)会避免更多的未知因素。
+
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/thinking_in_android/image.5ay4a09k0y5.png)
