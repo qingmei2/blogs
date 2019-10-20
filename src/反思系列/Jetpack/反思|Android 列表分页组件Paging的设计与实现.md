@@ -168,22 +168,127 @@ interface UserDao {
 }
 ```
 
-乍得一看似乎理所当然，但实际需求中有一个问题，这里的定义是模糊不清的——对于分页数据而言，不同的业务场景，所需要的分页策略是不同的。那么什么是分页策略呢？
+乍得一看似乎理所当然，但实际需求中有一个问题，这里的定义是模糊不清的——对于分页数据而言，不同的业务场景，所需要的相关配置是不同的。那么什么是分页相关配置呢？
 
 最直接的一点是每页数据的加载数量`PageSize`，不同的项目都会自行规定每页数据量的大小，一页请求15个数据还是20个数据？显然我们目前的代码无法进行配置，这是不合理的。
 
-### 2.数据源: DataSource
+### 2.数据源: DataSource及其工厂
 
-我们需要一个角色为`PagedList`容器提供分页数据，那就是数据源`DataSource`。
+回答这个问题之前，我们还需要定义一个角色，用来为`PagedList`容器提供分页数据，那就是数据源`DataSource`。
 
-那么什么是`DataSource`呢？它不应该是 **数据库数据** 或者 **服务端数据**， 而应该是 **数据库数据** 或者 **服务端数据** 的一个快照（`Snapshot`）。
+什么是`DataSource`呢？它不应该是 **数据库数据** 或者 **服务端数据**， 而应该是 **数据库数据** 或者 **服务端数据** 的一个快照（`Snapshot`）。
 
-因此，每当`Paging`被告知需要更多数据：“Hi，我需要第45-60个的数据！”——数据源`DataSource`就会将当前`Snapshot`对应索引的数据交给`PagedList`。
+每当`Paging`被告知需要更多数据：“Hi，我需要第45-60个的数据！”——数据源`DataSource`就会将当前`Snapshot`对应索引的数据交给`PagedList`。
 
-但是，每当我们需要构建一个新的`PagedList`时——比如数据已经失效，`DataSource`中旧的数据没有意义了，因此`DataSource`也需要被重置。
+但是我们需要构建一个新的`PagedList`的时候——比如数据已经失效，`DataSource`中旧的数据没有意义了，因此`DataSource`也需要被重置。
 
 在代码中，这意味着新的`DataSource`对象被创建，因此，我们需要提供的不是`DataSource`，而是提供`DataSource`的工厂。
 
 > 为什么要提供`DataSource.Factory`而不是一个`DataSource`? 复用这个`DataSource`不可以吗，当然可以，但是将`DataSource`设置为`immutable`(不可变)会避免更多的未知因素。
 
+重新整理思路，我们如何定义`Dao`中接口的返回值呢？
+
+```Kotlin
+@Dao
+interface UserDao {
+  // Int 代表按照数据的位置（position）获取数据
+  // User 代表数据的类型
+  @Query("SELECT * FROM user")
+  fun queryUsers(): DataSource.Factory<Int, User>
+}
+```
+
+返回的是一个数据源的提供者`DataSource.Factory`，页面初始化时，会通过工厂方法创建一个新的`DataSource`，这之后对应会创建一个新的`PagedList`，每当`PagedList`想要获取下一页的数据，数据源都会根据请求索引进行数据的提供。
+
+当数据失效时，`DataSource.Factory`会再次创建一个新的`DataSource`，其内部包含了最新的数据快照（本案例中代表着数据库中的最新数据），随后创建一个新的`PagedList`，并从`DataSource`中取最新的数据进行展示——当然，这之后的分页流程都是相同的，无需再次复述。
+
+笔者绘制了一幅图用于描述三者之间的关系，读者可参考上述文字和图片加以理解：
+
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/thinking_in_android/image.5ay4a09k0y5.png)
+
+### 3.串联两者：PagedListBuilder
+
+回归第一小节的那个问题，分页相关业务如何进行配置？我们虽然介绍了为`PagedList`提供数据的`DataSource`，但这个问题似乎还是没有得到解决。
+
+此外，现在`Dao`中接口的返回值已经是`DataSource.Factory`，而`ViewModel`中的成员被观察者则是`LiveData<PagedList<User>>`类型，如何 **将数据源的工厂和`LiveData<PagedList>`进行串联**  ？
+
+因此我们还需要定义一个新的角色`PagedListBuilder`，开发者将 **数据源工厂** 和 **相关配置** 统一交给`PagedListBuilder`，即可生成对应的`LiveData<PagedList<User>>`:
+
+```Kotlin
+class MyViewModel(val dao: UserDao) : ViewModel() {
+  val users: LiveData<PagedList<User>>
+
+  init {
+    // 1.创建DataSource.Factory
+    val factory: DataSource.Factory = dao.queryUsers()
+
+    // 2.通过LivePagedListBuilder配置工厂和pageSize, 对users进行实例化
+    users = LivePagedListBuilder(factory, 30).build()
+  }
+}
+```
+
+如代码所示，我们在`ViewModel`中先通过`dao`获取了`DataSource.Factory`，工厂创建数据源`DataSource`，后者为`PagedList`提供列表所需要的数据；此外，另外一个`Int`类型的参数则制定了每页数据加载的数量，这里我们指定每页数据数量为30。
+
+我们成功创建了一个`LiveData<PagedList<User>>`的可观察者对象，接下来的步骤读者驾轻就熟，只不过我们这里使用的是`PagedListAdapter`：
+
+```Kotlin
+class MyActivity : Activity {
+  val myViewModel: MyViewModel
+  // 1.这里我们使用PagedListAdapter
+  val adapter: PagedListAdapter
+
+  fun onCreate(bundle: Bundle?) {
+    // 2.在Activity中对LiveData进行订阅
+    myViewModel.users.observe(this) {
+      // 3.每当数据更新，计算新旧数据集的差异，对列表进行更新
+      adapter.submitList(it)
+    }
+  }    
+}
+```
+
+`PagedListAdapter`内部的实现和普通列表`ListAdapter`的代码几乎完全相同：
+
+```Kotlin
+// 几乎完全相同的代码，只有继承的父类不同
+class MyAdapter(): PagedListAdapter<User, UserViewHolder>(
+  object: DiffUtil.ItemCallback<User>() {
+    override fun areItemsTheSame(oldItem: User, newItem: User)
+        = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: User, newItem: User)
+        = oldItem == newItem   
+  }
+) {
+  // ...
+}
+```
+
+> 准确的来说，两者内部的实现还有微弱的区别，前者`ListAdapter`的`getItem()`函数的返回值是`User`,而后者`PagedListAdapter`返回值应该是`User?`(Nullable),其原因我们会在下面的`Placeholder`部分进行描述。
+
+### 4.更多可选项：PagedList.Config
+
+目前的介绍中，分页的功能似乎已经实现完毕，但这些在现实开发中往往不够，产品业务还有更多细节性的需求。
+
+在上一小节中，我们通过`LivePagedListBuilder`对`LiveData<PagedList<User>>`进行创建，这其中第二个参数是 **分页组件的配置**，代表了每页加载的数量（`PageSize`） ：
+
+```Kotlin
+// before
+val users: LiveData<PagedList<User>> = LivePagedListBuilder(factory, 30).build()
+```
+
+读者应该理解，**分页组件的配置** 本身就是抽象的，`PageSize`并不能完全代表它，因此，设计者额外定义了更复杂的数据结构`PagedList.Config`，以描述更细节化的配置参数：
+
+```Kotlin
+// after
+val config = PagedList.Config.Builder()
+      .setPageSize(15)              // 分页加载的数量
+      .setInitialLoadSizeHint(30)   // 初次加载的数量
+      .setPrefetchDistance(10)      // 预取数据的距离
+      .setEnablePlaceholders(false) // 是否启用占位符
+      .build()
+
+val users: LiveData<PagedList<User>> = LivePagedListBuilder(factory, config).build()
+```
+
+对复杂业务配置的`API`设计来说，**建造者模式** 显然是最佳的选择。
