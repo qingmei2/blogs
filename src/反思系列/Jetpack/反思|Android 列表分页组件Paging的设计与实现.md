@@ -44,7 +44,7 @@
 
 ### 3.整理需求
 
-#### 1、简单易用
+#### 3.1、简单易用
 
 上文我们谈到，**UI响应数据的变更**，这种情况下，使用 **观察者模式** 是一个不错的主意，比如`LiveData`、`RxJava`甚至自定义一个接口等等，开发者仅需要观察每次数据库中数据的变更，并进行`UI`的更新：
 
@@ -56,19 +56,19 @@ class MyViewModel : ViewModel() {
 
 新的组件我们也希望能拥有同样的便利，比如使用`LiveData`或者`RxJava`，并进行订阅处理数据的更新—— **简单** 且 **易用**。
 
-#### 2、处理更多层级
+#### 3.2、处理更多层级
 
 我们希望新的组件能够处理多层，我们希望列表展示 **服务器** 返回的数据、 或者 **数据库** 中的数据，并将其放入UI中。
 
-#### 3、性能
+#### 3.3、性能
 
 新的组件必须保证足够的快，不做任何没必要的行为，为了保证效率，繁重的操作不要直接放在`UI`线程中处理。
 
-#### 4、感知生命周期
+#### 3.4、感知生命周期
 
 如果可能，新的组件需要能够对生命周期进行感知，就像`LiveData`一样，如果页面并不在屏幕的可视范围内，组件不应该工作。
 
-#### 5、足够灵活
+#### 3.5、足够灵活
 
 足够的灵活性非常重要——每个项目都有不同的业务，这意味着不同的`API`、不同的数据结构，新的组件必须保证能够应对所有的业务场景。
 
@@ -296,11 +296,11 @@ val users: LiveData<PagedList<User>> = LivePagedListBuilder(factory, config).bui
 
 接下来我们简单了解一下，这些可选的配置分别代表了什么。
 
-#### 1.分页数量：PageSize
+#### 4.1.分页数量：PageSize
 
 最易理解的配置，分页请求数据时，开发者总是需要定义每页加载数据的数量。
 
-#### 2.初始加载数量：InitialLoadSizeHint
+#### 4.2.初始加载数量：InitialLoadSizeHint
 
 定义首次加载时要加载的`Item`数量。
 
@@ -308,13 +308,13 @@ val users: LiveData<PagedList<User>> = LivePagedListBuilder(factory, config).bui
 
 如果未设置，则默认为`PageSize`的三倍。
 
-#### 3.预取距离：PrefetchDistance
+#### 4.3.预取距离：PrefetchDistance
 
 顾名思义，该参数配置定义了列表当距离加载边缘多远时进行分页的请求，默认大小为`PageSize`——即距离底部还有一页数据时，开启下一页的数据加载。
 
 若该参数配置为0，则表示除非明确要求，否则不会加载任何数据，通常不建议这样做，因为这将导致用户在滚动屏幕时看到占位符或列表的末尾。
 
-#### 4.是否启用占位符：PlaceholderEnabled
+#### 4.4.是否启用占位符：PlaceholderEnabled
 
 该配置项需要传入一个`boolean`值以决定列表是否开启`placeholder`（占位符），那么什么是`placeholder`呢？
 
@@ -334,7 +334,7 @@ val users: LiveData<PagedList<User>> = LivePagedListBuilder(factory, config).bui
 
 随着`PagedList`下一页数据的异步加载完毕，伴随着`RecyclerView`的原生动画，新的数据会被重新覆盖渲染到`placeholder`对应的条目上，就像`gif`图展示的一样。
 
-#### 5.关于Placeholder
+#### 4.5.关于Placeholder
 
 这里我专门开一个小节谈谈关于`placeholder`，因为这个机制和我们传统的分页业务似乎有所不同，但`Google`的工程师们认为在某些业务场景下，该配置确实很有用。
 
