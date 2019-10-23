@@ -1,10 +1,10 @@
-# 反思|Android 列表分页组件Paging的设计与实现：架构描述
+# 反思|Android 列表分页组件Paging的设计与实现：系统概述
 
 ## 前言
 
 本文将对`Paging`分页组件的设计和实现进行一个系统整体的概述，**强烈建议** 读者将本文作为学习`Paging` **阅读优先级最高的文章**，所有其它的`Paging`中文博客阅读优先级都应该靠后。
 
-本文篇幅 **极长**，整体结构思维导图如下：
+本文篇幅 **较长**，整体结构思维导图如下：
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/image.y4rdl3xz6rj.png)
 
