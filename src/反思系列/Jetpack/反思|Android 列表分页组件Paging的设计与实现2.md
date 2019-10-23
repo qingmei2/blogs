@@ -184,6 +184,81 @@
 
 现在我们理解了 **单一数据源** 的好处，该方案在分页组件中也同样适用，我们唯一需要实现的是，如何主动触发服务端数据的请求？
 
-这是当然的，因为`Server`总是需要一个触发网络请求的信号，否则列表所展示的永远是`Database`中的数据——别忘了，`ViewModel`和`Server`之间并没有任何关系。
+这是当然的，因为`Database`中依赖网络请求成功之后的数据存储更新，否则列表所展示的永远是`Database`中不变的数据——别忘了，`ViewModel`和`Server`之间并没有任何关系。
 
-简单
+针对`Database`中的数据更新，简单的方式是 **直接进行网络请求**，这种方式使用非常普遍，比如，列表需要下拉刷新，这时主动请求网络，网络请求成功后将数据存入数据库即可，这时`ViewModel`响应到数据库中的更新，并将最新的数据更新在`UI`上。
+
+另外一种方式则和`Paging`分页组件本身有关，当列表滚动到指定位置，需要对下一页数据进行加载时，如何向网络拉取最新数据？
+
+`Paging`为此提供了`BoundaryCallback`类用于配置分页列表自动请求分页数据的回调函数，其作用是，当数据库中最后一项数据被加载时，则会调用其`onItemAtEndLoaded`函数：
+
+```Kotlin
+class MyBoundaryCallback(
+    val database : MyLocalCache
+    val apiService: ApiService
+) : PagedList.BoundaryCallback<User>() {
+
+    override fun onItemAtEndLoaded(itemAtEnd: User) {
+      // 请求网络数据，并更新到数据库中
+      requestAndAppendData(apiService, database, itemAtEnd)
+    }
+}
+```
+
+`BoundaryCallback`类为`Paging`通过`Network`+`Database`进行分页加载的功能完成了最后一块拼图，现在，分页列表所有数据都来源于本地缓存，并且复杂的业务实现起来也足够灵活。
+
+### 5.更多优势
+
+通过`Network`+`Database`进行`Paging`分页加载还有更多好处，比如更轻易管理分页列表 **额外的状态** 。
+
+不仅仅是分页列表，这种方案使得所有列表的 **状态管理** 的更加容易，笔者为此撰写了另外一篇文章去阐述它，篇幅所限，本文不进行展开，有兴趣的读者可以阅读。
+
+> [Android官方架构组件Paging-Ex:列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+
+## 六、总结
+
+本文对`Paging`进行了系统性的概述，最后，`Paging`到底是一个什么样的分页库？
+
+首先，它支持`Network`、`Database`或者两者，通过`Paging`，你可以轻松获取分页数据，并直接更新在`RecyclerView`中。
+
+其次，`Paging`使用了非常优秀的 **观察者模式** ，其简单的`API`的内部封装了复杂的分页逻辑。
+
+第三，`Paging`灵活的配置和强大的支持——不同`DataSource`的数据加载方式、不同的响应式库的支持（`LiveData`、`RxJava`）等等，`Paging`总是能够胜任分页数据加载的需求。
+
+---
+
+## 更多 & 参考
+
+再次重申，**强烈建议** 读者将本文作为学习`Paging` **阅读优先级最高的文章**，所有其它的`Paging`中文博客阅读优先级都应该靠后。
+
+——是因为本文的篇幅较长吗？（1w字的确...）不止如此，本文尝试对`Paging`的整体结构进行拆分，笔者认为，只要对整体结构有足够的理解，一切`API`的调用都轻而易举。但如果直接上手写代码的话，反而容易造成 **只见树木,不见森林** 之感，上手效率反而降低。
+
+此外，本文附带一些学习资料，供读者参考：
+
+#### 1.参考视频
+
+本文的大纲来源于 `Google I/O '18`中对`Paging`的一个视频分享，讲的非常精彩，本文绝大多数内容和灵感也是由此而来，强烈建议读者观看。
+
+* [Android Jetpack: manage infinite lists with RecyclerView and Paging.](https://www.youtube.com/watch?v=BE5bsyGGLf4&t=841s)  
+
+#### 2.参考文章
+
+其实也就是笔者去年写的几篇关于`Paging`的文章：
+
+* [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)
+* [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)
+* [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://juejin.im/user/588555ff1b69e600591e8462/posts) 或者 [Github](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过**关注**督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md)
