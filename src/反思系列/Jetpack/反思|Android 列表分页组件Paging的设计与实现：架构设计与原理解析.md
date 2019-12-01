@@ -10,6 +10,10 @@
 
 反过来说，若从`Google`工程师们设计、研发和维护的源码中有所借鉴，即使不在项目中真正使用它，自己依然能受益匪浅。
 
+本文章节如下：
+
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/android/jetpack/paging/thinking_in_android/image.rzbyia3zb1s.png)
+
 ## 架构设计与原理解析
 
 ### 1、通过建造者模式进行依赖注入
