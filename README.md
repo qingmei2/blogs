@@ -57,6 +57,7 @@
 ||[Android LayoutInflater机制的设计与实现](https://github.com/qingmei2/android-programming-profile/blob/master/src/反思系列/Activity/LayoutInflater/反思%7CAndroid%20LayoutInflater的设计与实现.md)||
 ||[Android 事件分发机制的设计与实现](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/View/%E5%8F%8D%E6%80%9D%7CAndroid%20%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0.md)||
 ||[Android 列表分页组件Paging的设计与实现：系统概述](https://github.com/qingmei2/blogs/issues/30)||
+||[Android 列表分页组件Paging的设计与实现：架构设计与原理解析](https://github.com/qingmei2/blogs/issues/31)||
 
 
 首页我只放出了部分博文，所有文章你都可以在 **[这里](https://github.com/qingmei2/Programming-life/tree/master/src)** 找到，**更多文章持续更新中......**
