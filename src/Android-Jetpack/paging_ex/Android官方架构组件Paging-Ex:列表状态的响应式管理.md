@@ -1,5 +1,19 @@
 >  **本文已授权「玉刚说」微信公众号独家发布**
 
+### 2019/12/24 补充
+距本文发布时隔一年，笔者认为，本文不应该作为入门教程的博客系列，相反，读者真正想要理解 Paging 的使用，应该先尝试理解其分页组件的本质思想：
+
+>  [反思|Android 列表分页组件Paging的设计与实现：系统概述](https://juejin.im/post/5db06bb6518825646d79070b)  
+[反思|Android 列表分页组件Paging的设计与实现：架构设计与原理解析](https://juejin.im/post/5de3df466fb9a07161484030)
+
+以上两篇文章将对Paging分页组件进行了系统性的概述，笔者强烈建议 读者将以上两篇文章作为学习 Paging 阅读优先级 **最高** 的学习资料，**所有其它的Paging中文博客阅读优先级都应该靠后**。
+
+本文及相关引申阅读：
+
+> [Android官方架构组件Paging：分页库的设计美学](https://juejin.im/post/5c53ad9e6fb9a049eb3c5cfd)  
+ [Android官方架构组件Paging-Ex：为分页列表添加Header和Footer](https://juejin.im/post/5caa0052f265da24ea7d3c2c)  
+ [Android官方架构组件Paging-Ex：列表状态的响应式管理](https://juejin.im/post/5ce6ba09e51d4555e372a562)
+
 ## 概述
 
 `Paging`是`Google`在2018年I/O大会上推出的适用于`Android`原生开发的分页库，随着越来越多的开发者着手使用`Paging`，越来越多的问题暴露出来，最直接的一个问题是：
