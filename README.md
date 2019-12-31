@@ -72,7 +72,7 @@
 
 你可以在这里找到我：
 
-* **Github:** https://github.com/qingmei2  
+* **GitHub:** https://github.com/qingmei2  
 * **CSDN:**   https://blog.csdn.net/mq2553299  
 * **掘金:**   https://juejin.im/user/588555ff1b69e600591e8462  
 * **Email:**  mq2553299@qq.com  
