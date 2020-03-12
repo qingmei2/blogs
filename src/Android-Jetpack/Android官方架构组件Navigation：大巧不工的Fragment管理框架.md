@@ -349,7 +349,7 @@ NavGraphFragment在 **获取** 并 **解析** 完这个xml资源文件后，它�
     android:id="@+id/action_page2"
     app:destination="@id/page2Fragment" />
 ```
-**app:destination**的属性，声明了这个行为导航的 **destination（目的地）**，我们可以看到，它会指印跳转到 id 为 **page2Fragment** 的Fragment（也就是 **MainPage2Fragment**）。
+**app:destination**的属性，声明了这个行为导航的 **destination（目的地）**，我们可以看到，它会指定跳转到 id 为 **page2Fragment** 的Fragment（也就是 **MainPage2Fragment**）。
 
 **android:id** 这个id作为Action唯一的 **标识**，在Fragment的某个点击事件中，我们通过id指向**对应的行为**，就像这样：
 
