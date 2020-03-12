@@ -506,7 +506,7 @@ private static NavController findViewNavController(@NonNull View view) {
 
 先不去吐槽Google工程师的野心，因为现在我们就是他，从拓展性的角度考虑，Navigation是一个导航框架，今后可能 **并非只为Fragment导航**。
 
-我们应该为要将导航的 **Destination**  抽象出来，这个类叫做 **NavDestination** ——无论 **Fragment** 也好，**Activity** 也罢，只要实现了这个接口，对于**NavController** 来讲，他们都是 **Destination（目标点）**而已。
+我们应该为要将导航的 **Destination**  抽象出来，这个类叫做 **NavDestination** ——无论 **Fragment** 也好，**Activity** 也罢，只要实现了这个接口，对于**NavController** 来讲，他们都是 **Destination(目标点)** 而已。
 
 对于不同的 **NavDestination** 来讲，它们之间的导航方式是不同的，这完全有可能（比如Activity 和 Fragment），如何根据不同的 **NavDestination** 进行不同的 **导航处理** 呢？
 
