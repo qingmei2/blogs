@@ -6,6 +6,8 @@
 
 **开源并不意味着免费**——我对于 **主张知识付费** 的行为十分认同，所以我决定，在文章的最下方加一个赞赏的入口，这样喜欢文章的人可以点进来，并根据所得选择是否自愿付费，当然 **也可以不付费**。
 
+赞赏金额也是令人犹豫的一点，我对自己的定价标准是 **2¥**。
+
 > 将赞赏功能统一放在这个独立的页面，其好处在于，我无需将 **知识付费** 的相关文字在每篇文章的末尾都啰嗦一次，因为这样会干扰读者的阅读，也降低了我个人文章的质量；其次，增加赞赏的入口本身也能够提升写作者对自我的约束，尽力保证每篇文章的输出有 **足够的篇幅** 和 **深度**。
 
 我会 **用自己最大的努力写好每一篇文章**，也欢迎通过 **评论和建议** 一起进行技术讨论。
@@ -13,6 +15,5 @@
 [返回上一页](https://github.com/qingmei2/Programming-life)
 
 ### 赞赏码
-
 
 <div align:left;display:inline;> <img width="240" height="240" src="https://github.com/qingmei2/Programming-life/blob/master/art/alipay.jpg"/> <img width="240" height="240" src="https://github.com/qingmei2/Programming-life/blob/master/art/wechat.jpg"/> </div>
