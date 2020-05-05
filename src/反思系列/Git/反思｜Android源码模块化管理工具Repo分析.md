@@ -21,7 +21,7 @@ https://source.android.com/source/downloading.html
 
 本文大纲如下：
 
-// TODO1
+![](https://github.com/qingmei2/qingmei2-blogs-art/blob/master/qingmei2-blogs-art/blogs/2020/image.sub2htlgte.png?raw=true)
 
 ## 核心思想
 
