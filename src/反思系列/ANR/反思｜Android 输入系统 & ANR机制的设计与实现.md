@@ -96,4 +96,12 @@ InputManager::InputManager(...) {
 
 读者应该知道，`Handler`简单的利用了`epoll`机制，做到了消息队列的阻塞和唤醒。关于`epoll`机制，这里有一篇非常经典的解释，不了解其设计理念的读者 **有必要** 了解一下：
 
-[知乎：epoll或者kqueue的原理是什么](https://www.zhihu.com/question/20122137/answer/14049112)
+> [知乎：epoll或者kqueue的原理是什么?](https://www.zhihu.com/question/20122137/answer/14049112)
+
+参考上文，让我们对`epoll`机制进行一个简单的总结:
+
+> `epoll`可以理解为`event poll`，不同于忙轮询和无差别轮询，在 **多个输入流** 的情况下，`epoll`只会把哪个流发生了怎样的I/O事件通知我们。此时我们对这些流的操作都是有意义的。
+
+`EventHub`中使用`epoll`的恰到好处——多个物理输入设备对应了多个不同的输入流，通过`epoll`机制，在`EventHub`初始化时，分别创建`mEpollFd`和`mINotifyFd`；前者用于监听设备节点是否有设备文件的增删，后者用于监听是否有可读事件，创建管道，让`InputReader`来读取事件：
+
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/qingmei2-blogs-art/blogs/2020/image2.wn7m6kwmz8.png)
