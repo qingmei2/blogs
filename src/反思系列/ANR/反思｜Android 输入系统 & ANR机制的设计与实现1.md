@@ -1,5 +1,7 @@
 # 反思｜Android 输入系统 & ANR机制的设计与实现
 
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/%E5%8F%8D%E6%80%9D%7C%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95.md) 。
+
 ## 概述
 
 对于`Android`开发者而言，`ANR`是一个老生常谈的问题，站在面试者的角度，似乎说出 **「不要在主线程做耗时操作」** 就算合格了。
@@ -14,7 +16,7 @@
 
 本文篇幅较长，思维导图如下：
 
-// TODO
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/2020/input_system.png)
 
 ## 一、自顶向下探索
 
@@ -172,13 +174,13 @@ InputManager::InputManager(...) {
 
 ![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/qingmei2-blogs-art/blogs/2020/image.k2k65nfp1fp.png)
 
-这里我们对该次 **跨进程通信建立流程** 有了初步的认知，对于`Android`系统而言，`Binder`是最广泛的跨进程通信的应用方式，但是`Android`系中跨进程通信就仅仅只用到了`Binder`吗？答案是否定的，至少 **输入系统** 中，`Socket`同样起到了举足轻重的作用。
+这里我们对该次 **跨进程通信建立流程** 有了初步的认知，对于`Android`系统而言，`Binder`是最广泛的跨进程通信的应用方式，但是`Android`系中跨进程通信就仅仅只用到了`Binder`吗？答案是否定的，至少在 **输入系统** 中，除了`Binder`之外，`Socket`同样起到了举足轻重的作用。
 
-那么新的问题就来了，这里为什么选择`Socket`而不是选择`Binder`呢，关于这个解释，这里有一个很好的版本：
+那么新的问题就来了，这里为什么选择`Socket`而不是选择`Binder`呢，关于这个问题的解释，笔者找到了一个很好的版本：
 
 > `Socket`可以实现异步的通知，且只需要两个线程参与（`Pipe`两端各一个），假设系统有`N`个应用程序，跟输入处理相关的线程数目是 `N+1` (`1`是`Input Dispatcher`线程）。然而，如果用`Binder`实现的话，为了实现异步接收，每个应用程序需要两个线程，一个`Binder`线程，一个后台处理线程（不能在`Binder`线程里处理输入，因为这样太耗时，将会堵塞住发送端的调用线程）。在发送端，同样需要两个线程，一个发送线程，一个接收线程来接收应用的完成通知，所以，`N`个应用程序需要 `2（N+1)`个线程。相比之下，`Socket`还是高效多了。
 
-现在，**应用进程** 能够收到由`InputDispatcher`处理完成并分发过来的 **输入事件** 了。至此，我们来到了最熟悉的应用层级事件分发流程中，对于这之后 **应用层级的事件分发**，可以阅读下述笔者的另外两篇文章，本文不赘述。
+现在，**应用进程** 能够收到由`InputDispatcher`处理完成并分发过来的 **输入事件** 了。至此，我们来到了最熟悉的应用层级事件分发流程。对于这之后 **应用层级的事件分发**，可以阅读下述笔者的另外两篇文章，本文不赘述。
 
 > * [Android 事件分发机制的设计与实现](https://juejin.im/post/6844903926446161927)
 > * [Android 事件拦截机制的设计与实现](https://juejin.im/post/6844904128397705230)
