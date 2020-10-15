@@ -52,12 +52,15 @@
 ||[[译]使用MVI打造响应式APP[八]:导航](https://juejin.im/post/5c9713285188252dab3ec273)  ||
 ||[实战：使用MVI打造响应式&函数式的Github客户端](https://github.com/qingmei2/MVI-Rhine)||
 |反思系列|||
-||[Android View机制设计与实现：测量流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/View/%E5%8F%8D%E6%80%9D%7CAndroid%20View%E6%9C%BA%E5%88%B6%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0%EF%BC%9A%E6%B5%8B%E9%87%8F%E6%B5%81%E7%A8%8B.md)  ||
-||[Android View机制设计与实现：布局流程](https://github.com/qingmei2/android-programming-profile/blob/master/src/反思系列/View/反思%7CAndroid%20View机制设计与实现：布局流程.md)||
-||[Android LayoutInflater机制的设计与实现](https://github.com/qingmei2/android-programming-profile/blob/master/src/反思系列/Activity/LayoutInflater/反思%7CAndroid%20LayoutInflater的设计与实现.md)||
-||[Android 事件分发机制的设计与实现](https://github.com/qingmei2/android-programming-profile/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/View/%E5%8F%8D%E6%80%9D%7CAndroid%20%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0.md)||
+||[Android View机制设计与实现：测量流程](https://github.com/qingmei2/blogs/issues/12)  ||
+||[Android View机制设计与实现：布局流程](https://github.com/qingmei2/blogs/issues/13)||
+||[Android LayoutInflater机制的设计与实现](https://github.com/qingmei2/blogs/issues/25)||
+||[Android 事件分发机制的设计与实现](https://github.com/qingmei2/blogs/issues/27)||
+||[Android 事件拦截机制的设计与实现](https://github.com/qingmei2/blogs/issues/44)||
 ||[Android 列表分页组件Paging的设计与实现：系统概述](https://github.com/qingmei2/blogs/issues/30)||
 ||[Android 列表分页组件Paging的设计与实现：架构设计与原理解析](https://github.com/qingmei2/blogs/issues/31)||
+||[Android 源码模块化管理工具Repo分析](https://github.com/qingmei2/blogs/issues/45)||
+||[Android 输入系统&ANR机制的设计与实现](https://github.com/qingmei2/blogs/issues/46)||
 
 
 首页我只放出了部分博文，所有文章你都可以在 **[这里](https://github.com/qingmei2/Programming-life/tree/master/src)** 找到，**更多文章持续更新中......**
