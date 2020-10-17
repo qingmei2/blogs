@@ -1,5 +1,7 @@
 # 反思｜官方也无力回天？Android SharedPreferences的设计与实现
 
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
+
 ## 起源
 
 就在前几日，有幸拜读到 [HiDhl](https://juejin.im/user/2594503168898744) 的[文章](https://juejin.im/post/6881442312560803853)，继腾讯开源类似功能的`MMKV`之后，`Google`官方维护的 `Jetpack DataStore` 组件横空出世——这是否意味着无论是腾讯三方还是`Google`官方的角度，`SharedPreferences`都彻底告别了这个时代？
@@ -81,8 +83,7 @@ sharedPreferences.edit().putString().commit();
 // 复杂的业务，一次更新多个键值对，仍然只进行一次IO操作（文件的写入）
 Editor editor = sharedPreferences.edit();
 editor.putString();
-editor.putBoolean();
-editor.putInt();
+editor.putBoolean().putInt();
 editor.commit();   // commit()才会更新文件
 ```
 
@@ -113,8 +114,235 @@ public SharedPreferences getSharedPreferences(String name, int mode) {
 
 因此，当`xml`文件过大时，应该考虑根据业务，细分为若干个小的文件进行管理；但过多的小文件也会导致过多的`SharedPreferences`对象，不好管理且易混淆。实际开发中，开发者应根据业务的需要进行对应的平衡。
 
-## 二、代码的不稳定因素
+## 二、线程安全问题
 
 > `SharedPreferences`是线程安全的吗？
 
-毫无疑问，`SharedPreferences`是线程安全的，但这只是对成品而言，对于我们目前的实现，显然还有一定的差距——那么，`Google`的设计者是如何保证`SharedPreferences`是线程安全的呢？
+毫无疑问，`SharedPreferences`是线程安全的，但这只是对成品而言，对于我们目前的实现，显然还有一定的差距，如何保证线程安全呢？
+
+——那，为了保证线程安全，怎么着不得加个锁吧。
+
+加个锁？那是起步！3把锁，你还别嫌多。你得研究开发写代码时的心理，舍得往代码里吭哧吭哧加锁的开发，压根不在乎再加2把。
+
+### 1、保证复杂流程代码的可读性
+
+为了保证`SharedPreferences`是线程安全的，`Google`的设计者一共使用了3把锁：
+
+```java
+final class SharedPreferencesImpl implements SharedPreferences {
+  // 1、使用注释标记锁的顺序
+  // Lock ordering rules:
+  //  - acquire SharedPreferencesImpl.mLock before EditorImpl.mLock
+  //  - acquire mWritingToDiskLock before EditorImpl.mLock
+
+  // 2、通过注解标记持有的是哪把锁
+  @GuardedBy("mLock")
+  private Map<String, Object> mMap;
+
+  @GuardedBy("mWritingToDiskLock")
+  private long mDiskStateGeneration;
+
+  public final class EditorImpl implements Editor {
+    @GuardedBy("mEditorLock")
+    private final Map<String, Object> mModified = new HashMap<>();
+  }
+}
+```
+
+对于这样复杂的类而言，如何提高代码的可读性？`SharedPreferencesImpl`做了一个很好的示范：**通过注释明确写明加锁的顺序，并为被加锁的成员使用`@GuardedBy`注解**。
+
+对于简单的 **读操作** 而言，我们知道其原理是读取内存中`mMap`的值并返回，那么为了保证线程安全，只需要加一把锁保证`mMap`的线程安全即可：
+
+```java
+public String getString(String key, @Nullable String defValue) {
+    synchronized (mLock) {
+        String v = (String)mMap.get(key);
+        return v != null ? v : defValue;
+    }
+}
+```
+
+那么，对于 **写操作** 而言，我们也能够通过一把锁达到线程安全的目的吗？
+
+### 2、保证写操作的线程安全
+
+对于写操作而言，每次`putXXX()`并不能立即更新在`mMap`中，这是理所当然的，如果开发者没有调用`apply()`方法，那么这些数据的更新理所当然应该被抛弃掉，但是如果直接更新在`mMap`中，那么数据就难以恢复。
+
+因此，`Editor`本身也应该持有一个`mEditorMap`对象，用于存储数据的更新；只有当调用`apply()`时，才尝试将`mEditorMap`与`mMap`进行合并，以达到数据更新的目的。
+
+因此，这里我们还需要另外一把锁保证`mEditorMap`的线程安全，笔者认为，不和`mMap`公用同一把锁的原因是，在`apply()`被调用之前，`getXXX`和`putXXX`理应是没有冲突的。
+
+代码实现参考如下：
+
+```java
+public final class EditorImpl implements Editor {
+  @Override
+  public Editor putString(String key, String value) {
+      synchronized (mEditorLock) {
+          mEditorMap.put(key, value);
+          return this;
+      }
+  }
+}
+```
+
+而当真正需要执行`apply()`进行写操作时，`mEditorMap`与`mMap`进行合并，这时必须通过2把锁保证`mEditorMap`与`mMap`的线程安全，保证`mMap`最终能够更新成功，最终向对应的`xml`文件中进行更新。
+
+文件的更新理所当然也需要加一把锁：
+
+```java
+// SharedPreferencesImpl.EditorImpl.enqueueDiskWrite()
+synchronized (mWritingToDiskLock) {
+    writeToFile(mcr, isFromSyncCommit);
+}
+```
+
+最终，我们一共通过使用了3把锁，对整个写操作的线程安全进行了保证。
+
+> 篇幅限制，本文不对源码进行详细引申，有兴趣的读者可参考 `SharedPreferencesImpl.EditorImpl` 类的`apply()`源码。
+
+### 3、摆脱不掉的ANR
+
+`apply()`方法设计的初衷是为了规避主线程的`I/O`操作导致`ANR`问题的产生，那么，`ANR`的问题真得到了有效的解决吗？
+
+并没有，在 **字节跳动技术团队** 的 [这篇文章](https://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247484387&idx=1&sn=e3c8d6ef52520c51b5e07306d9750e70&scene=21#wechat_redirect) 中，明确说明了线上环境中，相当一部分的`ANR`统计都来自于`SharedPreference`，由此可见，`apply()`并没有完全规避掉这个问题，那么导致`ANR`的原因又是什么呢。
+
+经过我们的优化，`SharedPreferences`的确是线程安全的，`apply()`的内部实现也的确将`I/O`操作交给了子线程，可以说其本身是没有问题的，而其原因归根到底则是`Android`的另外一个机制。
+
+在`apply()`方法中，首先会创建一个等待锁，根据源码版本的不同，最终更新文件的任务会交给`QueuedWork.singleThreadExecutor()`单个线程或者`HandlerThread`去执行，当文件更新完毕后会释放锁。
+
+但当`Activity.onStop()`以及`Service`处理`onStop`等相关方法时，则会执行 `QueuedWork.waitToFinish()`等待所有的等待锁释放，因此如果`SharedPreferences`一直没有完成更新任务，有可能会导致卡在主线程，最终超时导致`ANR`。
+
+> 什么情况下`SharedPreferences`会一直没有完成任务呢？ 比如太频繁无节制的`apply()`，导致任务过多，这也侧面说明了`SPUtils.putXXX()`这种粗暴的设计的弊端。
+
+`Google`为何这么设计呢？字节跳动技术团队的这篇文章中做出了如下猜测：
+
+> 无论是 commit 还是 apply 都会产生 ANR，但从 Android 之初到目前 Android8.0，Google 一直没有修复此 bug，我们贸然处理会产生什么问题呢。Google 在 Activity 和 Service 调用 onStop 之前阻塞主线程来处理 SP，我们能猜到的唯一原因是尽可能的保证数据的持久化。因为如果在运行过程中产生了 crash，也会导致 SP 未持久化，持久化本身是 IO 操作，也会失败。
+
+如此看来，导致这种缺陷的原因，其设计也的确是有自身的考量的，好在 [这篇文章](https://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247484387&idx=1&sn=e3c8d6ef52520c51b5e07306d9750e70&scene=21#wechat_redirect) 末尾也提出了一个折衷的解决方案，有兴趣的读者可以了解一下，本文不赘述。
+
+## 三、进程安全问题
+
+### 1、如何保证进程安全
+
+`SharedPreferences`是否进程安全呢？让我们打开`SharedPreferences`的源码，看一下最顶部类的注释：
+
+```java
+/**
+ * ...
+ * This class does not support use across multiple processes.
+ * ...
+ */
+public interface SharedPreferences {
+  // ...
+}
+```
+
+由此，由于没有使用跨进程的锁，`SharedPreferences`是进程不安全的，在跨进程频繁读写会有数据丢失的可能，这显然不符合我们的期望。
+
+那么，如何保证`SharedPreferences`进程的安全呢?
+
+实现思路很多，比如使用文件锁，保证每次只有一个进程在访问这个文件；或者对于`Android`开发而言，`ContentProvider`作为官方倡导的跨进程组件，其它进程通过定制的`ContentProvider`用于访问`SharedPreferences`，同样可以保证`SharedPreferences`的进程安全；等等。
+
+> 篇幅原因，对实现有兴趣的读者，可以参考 **百度** 或文章末尾的 **参考资料**。
+
+### 2、文件损坏 & 备份机制
+
+`SharedPreferences`再次迎来了新的挑战。
+
+由于不可预知的原因（比如内核崩溃或者系统突然断电），`xml`文件的 **写操作** 异常中止，`Android`系统本身的文件系统虽然有很多保护措施，但依然会有数据丢失或者文件损坏的情况。
+
+作为设计者，如何规避这样的问题呢？答案是对文件进行备份，`SharedPreferences`的写入操作正式执行之前，首先会对文件进行备份，将初始文件重命名为增加了一个`.bak`后缀的备份文件：
+
+```java
+// 尝试写入文件
+private void writeToFile(...) {
+  if (!backupFileExists) {
+      !mFile.renameTo(mBackupFile);
+  }
+}
+```
+
+这之后，尝试对文件进行写入操作，写入成功时，则将备份文件删除：
+
+```java
+// 写入成功，立即删除存在的备份文件
+// Writing was successful, delete the backup file if there is one.
+mBackupFile.delete();
+```
+
+反之，若因异常情况（比如进程被杀）导致写入失败，进程再次启动后，若发现存在备份文件，则将备份文件重名为源文件，原本未完成写入的文件就直接丢弃：
+
+```java
+// 从磁盘初始化加载时执行
+private void loadFromDisk() {
+    synchronized (mLock) {
+        if (mBackupFile.exists()) {
+            mFile.delete();
+            mBackupFile.renameTo(mFile);
+        }
+    }
+  }
+```
+
+现在，通过文件备份机制，我们能够保证数据只会丢失最后的更新，而之前成功保存的数据依然能够有效。
+
+## 四、小结
+
+综合来看，`SharedPreferences`那些一直被关注的问题，从设计的角度来看，都是有其自身考量的。
+
+我们可以看到，虽然`SharedPreferences`其整体是比较完善的，但是为什么相比较`MMKV`和`Jetpack DataStore`，其性能依然有明显的落差呢？
+
+这个原因更加综合且复杂，即使笔者也还是处于浅显的了解层面，比如后两者在其数据序列化方面都选用了更先进的`protobuf`协议，`MMKV`自身的数据的 **增量更新** 机制等等，有机会的话会另起新的一篇进行分享。
+
+反过头来，相对于对组件之间单纯进行 **好** 和 **不好** 的定义，笔者更认为通过辩证的方式去看待和学习它们，相信即使是`SharedPreferences`，学习下来依然能够有所收获。
+
+## 参考 & 感谢
+
+> 细心的读者应该能够发现，关于 **参考&感谢** 一节，笔者着墨越来越多，原因无他，笔者 **从不认为** 一篇文章就能够讲一个知识体系讲解的面面俱到，本文亦如是。
+>
+> 因此，读者应该有选择性查看其它优质内容的权利，甚至是为其增加一些简洁的介绍（因为标题大多都很相似），而不是文章末尾甩一堆`https`开头的链接不知所云。
+>
+> 这也是对这些内容创作者的尊重，如果你喜欢本文，也同样希望你能够喜欢下面这些文章。
+
+[1、请不要滥用SharedPreference @Weishu](http://weishu.me/2016/10/13/sharedpreference-advices/)
+
+我们如何定义好的文章？**深度** 和 **引人入胜**，笔者觉得缺一不可，深度保证了文章能够经久不衰，引人入胜代表了流畅的 **文字功底** 和 **文章结构**，这篇文章将`apply()`导致的`ANR`原理通过浅显易懂的方式解构的非常透彻，我认为它是最适合进阶学习`SharedPreferences`的文章。
+
+[2、Android源码分析之SharedPreferences @xiaoweiz](https://www.cnblogs.com/xiaoweiz/p/3733272.html)
+
+对于一门技术，如何系统掌握其 **理论** ，笔者的理解是，学习理解其设计思想，从零开始一步步完善整个系统解构，最终通过源码进行互相印证。
+
+而对于`SharedPreferences`，学习设计思想，看本文；源码解析，看这篇。
+
+[3、Android 之不要滥用 SharedPreferences（下） @godliness](https://www.jianshu.com/p/f5a29bce2e6f)
+
+标题和1很相似，但内容更有深度，该文针对 **多进程下的文件安全问题** 和 **文件备份机制** 进行了源码级别的解析，值得收藏。
+
+[4、剖析 SharedPreference apply引起的ANR问题 @字节跳动技术团队](https://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247484387&idx=1&sn=e3c8d6ef52520c51b5e07306d9750e70&scene=21#wechat_redirect)
+
+针对`apply()`方法导致的`ANR`的问题，进行了原因定位和解决方案，非常值得阅读。
+
+[5、再见 SharedPreferences 拥抱 Jetpack DataStore @HiDhl](https://juejin.im/post/6881442312560803853)
+
+最近笔者非常关注的博主，文章都很有深度，文章中根据`SharedPreferences`的缺陷都进行了系统性的阐述，也是因为该文，引发了笔者写本文缅怀`SharedPreferences`的想法。
+
+[6、通过ContentProvider实现SharedPreferences进程共享数据 @king龙123](https://www.jianshu.com/p/3e551e3d4a8d)
+
+[7、Android使用读写锁实现多进程安全的SharedPreferences @痕迹丶](https://blog.csdn.net/qq_27512671/article/details/101445642)
+
+针对保证`SharedPreferences`多进程安全的实现方案，有兴趣的读者可以作为引申阅读。
+
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
