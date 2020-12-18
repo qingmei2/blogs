@@ -4,9 +4,9 @@
 
 ## 简介
 
-我是 [却把清梅嗅](https://github.com/qingmei2), `Android`开发者，爱好 **逻辑推理游戏** 和 **写作**。
+我是 [却把清梅嗅](https://github.com/qingmei2), `Android`开发者，爱好 **写作**，曾多次作为嘉宾受邀参加`GDG (Google Developer Groups)`线下活动进行分享。
 
-在过去的时间里，我持续归纳总结了数十篇学习博客，现在我将它们统一总结到这里，以后所有的文章也会第一时间在这里进行更新。
+在过去的时间里，我持续归纳总结了若干技术文章，并将它们统一总结到这里，以后所有的文章也会第一时间在这里进行更新。
 
 ## 博客大纲
 
@@ -71,10 +71,9 @@
 
 ## 关于我
 
-我是 [却把清梅嗅](https://github.com/qingmei2), Android开发者，爱好 **逻辑推理游戏** 和 **写作**。
-
 你可以在这里找到我：
 
+* **Wechat**  mq2553299
 * **GitHub:** https://github.com/qingmei2  
 * **CSDN:**   https://blog.csdn.net/mq2553299  
 * **掘金:**   https://juejin.im/user/588555ff1b69e600591e8462  
