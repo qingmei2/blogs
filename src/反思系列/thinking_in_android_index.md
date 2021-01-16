@@ -29,3 +29,7 @@
 * [反思｜Android源码模块化管理工具Repo分析](https://github.com/qingmei2/blogs/issues/45)
 
 * [反思｜Android 输入系统 & ANR机制的设计与实现](https://github.com/qingmei2/blogs/issues/46)
+
+* [反思｜事件总线的局限性，及组件化开发流程中通信机制的设计与实现](https://github.com/qingmei2/blogs/issues/48)
+
+* [反思｜官方也无力回天？Android SharedPreferences的设计与实现](https://github.com/qingmei2/blogs/issues/49)
