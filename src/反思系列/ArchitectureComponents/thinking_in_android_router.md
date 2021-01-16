@@ -1,4 +1,6 @@
-反思 | 正遭滥用的事件总线，和组件化开发流程中通信机制的设计与实现
+反思 | 事件总线的局限性，及组件化开发流程中通信机制的设计与实现
+
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
 
 ## 背景
 
@@ -15,6 +17,8 @@
 本文将对组件化开发流程中 **通信组件** 的设计理念与实现方式进行完整的叙述。这里的 **通信组件** 并非特指某个已有的工具库（比如`ARouter`、`WMRouter`等），事实上，它们都是组件化开发流程的实践之一。
 
 本文结构如下：
+
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/blogs/2021/thinking_router_0.png)
 
 ## 一、组件间通信的基本实现
 
@@ -47,13 +51,11 @@ private void call() {
 
 ### 2、导火索
 
-即使`Google`推出了`Navigation`架构组件，很多开发者依然对这种单`Activity`多`Fragment`的开发模式不买账。
-
-**平白无故增加项目复杂度毫无意义**。
+即使`Google`推出了`Navigation`架构组件，很多开发者依然对这种单`Activity`多`Fragment`的开发模式不买账——**平白无故增加项目复杂度毫无意义**。
 
 无论如何，一个简单的计算器`app`也无必要引入复杂的工程架构，以及组件/插件化的开发流程。
 
-与其热火朝天讨论某个新框架流行与否，读者更想看到它到底是解决了什么问题。
+因此，与其热火朝天讨论某个新框架流行与否，读者更想看到它到底是解决了什么问题。
 
 那就是业务的 **爆炸性增长**。
 
@@ -256,7 +258,7 @@ callback.excute(result -> {
 
 #### 1.1 不实现自动注册的理由
 
-首先我们先讨论，通信库不实现自动注册的理由，以此为代表的是老牌的[ModularizationArchitecture](https://github.com/SpinyTech/ModularizationArchitecture)。
+首先我们先讨论，通信库不实现自动注册的理由。
 
 不提供自动注册是一种偷懒吗？笔者认为不完全是，手动注册的好处在于，首先，开发者对注册的组件总是已知的——这最简单且直接地提供了组件动态化可插拔的能力，且不易出错。
 
@@ -300,4 +302,52 @@ callback.excute(result -> {
 
 ## 小结
 
-本文针对组件化开发流程中核心的 **通信机制** 进行了系统性的描述，篇幅所限，很多优秀的功能和设计都并未一一描述，有兴趣的读者可以参考下面的链接进行深入性的探究。
+本文针对组件化开发流程中核心的 **通信机制** 进行了系统性的描述。
+
+对于组件化而言，其目的在于在 **业务模块间的解耦**，而事件总线除了能给开发者带来开发上暂时的便利，以及 **貌似解耦** 的假象之外，更多埋下了组件间依赖关系 **混乱的种子**，并非长久之计——更合理的方案是针对性引入适合自身项目、且更全面的组件间通信库。
+
+篇幅所限，很多优秀的开源项目中的功能和设计未能一一阐述，有兴趣的读者可以从下文的链接中进行选择性的参考。
+
+## 参考 & 感谢
+
+> 细心的读者能够发现，关于 **参考&感谢** 一节，笔者着墨越来越多，原因无他，笔者 **从不认为** 一篇文章就能够讲一个知识体系讲解的面面俱到，本文亦如是。
+>
+> 因此，读者应该有选择性查看其它优质内容的权利，甚至是为其增加一些简洁的介绍（因为标题大多都很相似），而不是文章末尾甩一堆`https`开头的链接不知所云。
+>
+> 这也是对这些内容创作者的尊重，如果你喜欢本文，也同样希望你能够喜欢下面这些文章。
+
+[1、开源最佳实践：Android平台页面路由框架ARouter @刘志龙](https://developer.aliyun.com/article/71687)
+
+对于`ARouter`的创作流程和设计理念，没有比作者本人更有发言权的了，这篇文章从理论到实践都讲解的非常清晰、流畅且自然，对于想要深入学习`ARouter`的读者不要错过。
+
+[2、Android架构思考：模块化、多进程 @Spiny](https://mp.weixin.qq.com/s/mIogiDTYGDFISKU5kBXcFA)
+
+相比较`ARouter`, [ModularizationArchitecture](https://github.com/SpinyTech/ModularizationArchitecture) 这个通信库及其作者似乎更低调，但从文章中可以得知，作者本人对组件化的理解非常深入，尤其是将进程间通信机制的实现，比喻为互联网，非常易于理解，因此直接将部分原文放在了 **多进程的支持** 一节，再次感谢！
+
+[3、Android组件化之(路由 vs 组件总线) @luckybilly](https://github.com/luckybilly/CC/wiki/Android%E7%BB%84%E4%BB%B6%E5%8C%96%E4%B9%8B(%E8%B7%AF%E7%94%B1-vs-%E7%BB%84%E4%BB%B6%E6%80%BB%E7%BA%BF))
+
+这篇文章是[CC](https://github.com/luckybilly/CC)的作者的原创文章，针对 **路由** 和 **组件总线** 进行了深入的对比，非常深入，推荐。
+
+[4、多个维度对比一些有代表性的开源android组件化开发方案 @luckybilly](https://github.com/luckybilly/AndroidComponentizeLibs)
+
+[5、一种更高效的组件自动注册方案(android组件化开发)](http://blog.csdn.net/cdecde111/article/details/78074692)
+
+[luckybilly](https://github.com/luckybilly)的另两篇好文，前者针对市面上一众主流的通信库进行了不同角度的对比，后者针对组件自动注册的不同实现进行了深入的对比，强烈推荐！
+
+
+[6、WMRouter：美团外卖Android开源路由框架](https://tech.meituan.com/2018/08/23/meituan-waimai-android-open-source-routing-framework.html)
+
+美团开源的[WMRouter](https://github.com/meituan/WMRouter)介绍文章，有兴趣的读者可作为引申阅读。
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
