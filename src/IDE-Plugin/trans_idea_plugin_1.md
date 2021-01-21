@@ -208,6 +208,6 @@ Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得
 如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
 
 * [我的Android学习体系](https://github.com/qingmei2/blogs)
-* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
-* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
-* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/main/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/main/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
