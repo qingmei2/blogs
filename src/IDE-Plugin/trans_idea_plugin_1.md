@@ -1,8 +1,10 @@
 # [译] 编写AndroidStudio插件(一):创建一个基本插件
 
-> 原文：[Write an Android Studio Plugin Part 1: Creating a basic plugin](https://proandroiddev.com/write-an-android-studio-plugin-part-1-creating-a-basic-plugin-af956c4f8b50)   
-作者：[Marcos Holgado](https://medium.com/@marcosholgado)   
-译者：[却把清梅嗅](https://github.com/qingmei2)   
+> 原文：[Write an Android Studio Plugin Part 1: Creating a basic plugin](https://proandroiddev.com/write-an-android-studio-plugin-part-1-creating-a-basic-plugin-af956c4f8b50)     
+>作者：[Marcos Holgado](https://medium.com/@marcosholgado)      
+>译者：[却把清梅嗅](https://github.com/qingmei2)     
+>
+> 《编写AndroidStudio插件》系列是 **IntelliJ IDEA** 官方推荐的学习插件IDE开发博客专栏，希望对有需要的读者有所帮助。
 
 早在10月的时候，我就在`Droidcon UK 2018`上针对如何在`Android Studio`上创建自己的插件，以及如何使所有相关操作自动化进行了讨论。因为当时我并没有很多时间对其进行详细介绍，所以这个系列诞生了。
 
