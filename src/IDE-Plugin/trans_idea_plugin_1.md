@@ -6,7 +6,7 @@
 
 早在10月的时候，我就在`Droidcon UK 2018`上针对如何在`Android Studio`上创建自己的插件，以及如何使所有相关操作自动化进行了讨论。因为当时我并没有很多时间对其进行详细介绍，所以这个系列诞生了。
 
-![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/ide-plugin/image.s5r9l8xznb.png)
+![](https://raw.githubusercontent.com/qingmei2/qingmei2-blogs-art/master/ide-plugin/image.erde8h8rbvk.png)
 
 ## 我们要干什么？
 
@@ -191,3 +191,23 @@ class MyAction: AnAction() {
 第一部分就是这样。在[第二部分](https://proandroiddev.com/write-an-android-studio-plugin-part-2-persisting-data-5f81ca5d9e43)，我们将研究如何使用组件存储数据并保存插件的状态。同时，如果您有任何疑问，请访问[twitter](https://www.twitter.com/orbycius)或发表评论。
 
 如果您想观看我在`Droidcon UK`上发表的演讲，请点击[这里](https://skillsmatter.com/skillscasts/12166-write-your-own-android-studio-plugin-and-automate-everything)。
+
+---
+## 《编写AndroidStudio插件》译文系列
+
+* [译: 编写AndroidStudio插件(一):创建一个基本插件](https://github.com/qingmei2/blogs/issues/50)
+* [译: 编写AndroidStudio插件(二):持久化数据](https://github.com/qingmei2/blogs/issues/51)
+* [译: 编写AndroidStudio插件(三): 更多配置](https://github.com/qingmei2/blogs/issues/52)
+* [译: 编写AndroidStudio插件(四):整合Jira](https://github.com/qingmei2/blogs/issues/53)
+* [译: 编写AndroidStudio插件(五):本地化和通知](https://github.com/qingmei2/blogs/issues/54)
+
+## 关于译者
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
