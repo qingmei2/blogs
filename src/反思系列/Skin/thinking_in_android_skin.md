@@ -37,7 +37,7 @@
 设计人员在设计时，仅需要针对页面每一个元素填充好对应的`key`，根据规范很清晰地完成UI设计：
 
 |颜色Key|日间模式|深色模式|备注|
-|-|-|- ||
+|-|-|- |-|
 |skinPrimaryTextColor|#000000|#FFFFFF|标题字体颜色|
 |skinSecondaryTextColor|#CCCCCC|#CCCCCC|次级标题字体颜色|
 |skinMainBgColor|#FFFFFF|#333333|页面主背景色|
@@ -386,7 +386,7 @@ public interface SkinLoaderListener {
 既然`color`资源能够支持换肤，`drawable`资源理所当然也应该提供支持，这样页面的展示可以更加多元化，通常这种场景应用于页面的背景图，对此读者可以参考淘宝APP的换肤功能效果：
 
 |资源Key|日间模式|深色模式|备注|
-|-|-|- ||
+|-|-|- |-|
 |skinPrimaryTextColor|#000000|#FFFFFF|标题字体颜色|
 |skinSecondaryTextColor|#CCCCCC|#CCCCCC|次级标题字体颜色|
 |**skinMainBgDrawable**|A图片|B图片|页面主背景图|
