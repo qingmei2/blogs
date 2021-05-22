@@ -34,7 +34,7 @@
 
 设计人员在设计时，仅需要针对页面每一个元素填充好对应的`key`，根据规范很清晰地完成UI设计：
 
-||日间模式|深色模式|备注|
+|颜色Key|日间模式|深色模式|备注|
 |-|-|- ||
 |skinPrimaryTextColor|#000000|#FFFFFF|标题字体颜色|
 |skinSecondaryTextColor|#CCCCCC|#CCCCCC|次级标题字体颜色|
@@ -139,19 +139,177 @@ tvSubTitle.setTextColor(SkinUtil.getColorRes(R.color.skinSecondaryTextColor));
 
 回到本小节最初的问题，产品化思维也是一个优秀的开发者不可或缺的能力：先根据需求罗列不同的实现方案，做出对应的权衡，最后动手编码。
 
-## 三、整合实现思路
+## 三、整合思路
 
 目前为止，一切都还停留在需求提出和设计阶段，随着需求的明确，技术难点逐一罗列在开发者面前。
 
-### 1.新的问题：热刷新机制
+### 1.动态刷新机制
 
-开发者面临的第一个问题：如何实现当前页面换肤后的刷新功能，以微信注册页面为例，我们手动切换到系统的深色模式后，微信立即进行了页面的刷新：
+开发者面临的第一个问题：如何实现换肤后的 **动态刷新** 功能。
+
+以微信注册页面为例，手动切换到深色模式后，微信进行了页面的刷新：
 
 ![](hot_update_wechat.gif)
 
-那么，用户无论是在应用内切换了皮肤包，还是手动切换了系统的深色模式，我们如何将这个通知进行下发，保证所有页面都完成主题的切换呢？
+读者不禁会问，**动态刷新的意义是什么** ，让当前页面重建或者APP重启不行吗？
 
-### 2.着手点：LayoutInflater.Factory2
+当然可行，但是 **不合理** ，因为页面重建意味着页面状态的丢失，用户无法接受一个表单页面已填信息被重置；而如果要弥补这个问题，对每个页面重建追加状态的保存（`Activity.onSaveInstanceState()`），在实现的角度来看，也是一个巨大的工程量。
+
+因此动态刷新势在必行——用户无论是在应用内切换了皮肤包，还是手动切换了系统的深色模式，我们如何将这个通知进行下发，保证所有页面都完成对应的刷新呢？
+
+### 2.保存所有页面的Activity
+
+读者知道，我们可以通过`Application.registerActivityLifecycleCallbacks()`方法观察到应用内所有`Activity`的生命周期，这也意味着我们可以持有所有的`Activity`：
+
+```java
+public class MyApp extends Application {
+
+    // 当前应用内的所有Activity
+    private List<Activity> mPages = new ArrayList();
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+              mPages.add(activity);
+            }
+
+            @Override
+            public void onActivityDestroyed(@NonNull Activity activity) {
+              mPages.remove(activity);
+            }
+
+            // ...省略其它生命周期
+        });
+    }
+}
+```
+
+有了所有的`Activity`的引用，开发者就可以在接到换肤通知的时候，第一时间尝试让所有页面的所有`View`去更新换肤。
+
+### 3.成本问题
+
+但巨大的谜团随之映入眼帘，对于控件而言，**更新换肤这个概念本身并不存在**。
+
+什么意思呢？ 当换肤通知到达时，我无法令`TextView`更新文字颜色，也无法令`View`更新背景颜色——它们都只是系统的控件，执行的都是最基础的逻辑，说白了，开发者根本无法进行编码。
+
+有同学说，那我直接让整个页面的整个`View`树所有`View`都全部重新渲染可以吗？可以，但是又回到了最初的问题，那就是所有`View`本身的状态也被重置了（比如`EditText`的文字被清零），退一步讲，即使这一点可以被接受，那么整个`View`树的重新渲染也会极大影响性能。
+
+那么，如何尽可能的 **节省页面动态刷新的成本** ？
+
+开发者希望，换肤发生时，**只对指定控件的指定属性进行动态更新**，比如，`TextView`只关注更新`background`和`textColor`，`ViewGroup`只关注`background`，其他的属性不需要重置和修改，将设备的每一分性能都利用到极致：
+
+```java
+public interface SkinSupportable {
+  void updateSkin();
+}
+
+class SkinCompatTextView extends TextView implements SkinSupportable {
+
+  public void updateSkin() {
+    // 使用当前最新的资源更新 background 和 textColor
+  }
+}
+
+class SkinCompatFrameLayout extends FrameLayout implements SkinSupportable {
+
+  public void updateSkin() {
+    // 使用当前最新的资源更新 background
+  }
+}
+```
+
+如代码所示，`SkinSupportable`是一个接口，实现该接口的类意味着都支持动态刷新，当换肤发生时，我们只需要拿到当前的`Activity`，并通过遍历`View`树，让所有`SkinSupportable`的实现类都去执行`updateSkin`方法进行自身的刷新，那么整个页面也就完成了换肤的刷新，同时不会影响`View`本身当前其他的属性。
+
+当然，这也意味着开发者需要将常规的控件进行一轮覆盖性的封装，并提供出对应的依赖：
+
+```groovy
+implementation 'skin.support:skin-support:1.0.0'                   // 基础控件支持，比如SkinCompatTextView、SkinCompatFrameLayout等
+implementation 'skin.support:skin-support-cardview:1.0.0'          // 三方控件支持，比如SkinCompatCardView
+implementation 'skin.support:skin-support-constraint-layout:1.0.0' // 三方控件支持，比如SkinCompatConstraintLayout
+```
+
+从长期来看，针对控件一一封装，提供可组合选择的依赖，对于换肤库的设计者而言，库本身的开发成本其实并不高。
 
 
-读者应该知道，
+### 4.牵一发而动全身
+
+但负责业务开发的开发者叫苦不迭。
+
+按照目前的设计，岂不是工程的`xml文件`中所有控件都需要重新进行替换？
+
+```xml
+<!--使用前-->
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Hello World"
+    android:textColor="@color/skinPrimaryTextColor" />
+
+<!--需要替换为-->
+<skin.support.SkinCompatTextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Hello World"
+    android:textColor="@color/skinPrimaryTextColor" />
+```
+
+从另一个角度来看，这又是额外的成本，如果哪一天想要剔除或者替换换肤库，那么无异于一次新的重构。
+
+因此设计者需要尽量避免类似 **牵一发而动全身** 的设计，最好是让开发者无感知的感受到换肤库的 **动态更新**。
+
+### 5.着手点: LayoutInflater.Factory2
+
+> 对 `LayoutInflater` 不了解的读者，可以参考笔者的 [这篇文章](https://github.com/qingmei2/blogs/issues/25) 。
+
+了解`LayoutInflater`的读者应该知道，在解析`xml`文件并实例化`View`的过程中，`LayoutInflater`通过自身的`Factory2`接口，将基础控件拦截并创建成对应的`AppCompatXXXView`，既避免了反射创建`View`对性能的影响，也保证了向下的兼容性:
+
+```java
+switch (name) {
+    // 解析xml，基础组件都通过new方式进行创建
+    case "TextView":
+        view = new AppCompatTextView(context, attrs);
+        break;
+    case "ImageView":
+        view = new AppCompatImageView(context, attrs);
+        break;
+    case "Button":
+        view = new AppCompatButton(context, attrs);
+        break;
+    case "EditText":
+        view = new AppCompatEditText(context, attrs);
+        break;
+    // ...
+    default:
+    // 其他通过反射创建
+}
+```
+
+一图以蔽之：
+
+![](skin_layout_inflater.png)
+
+因此，`LayoutInflater`本身的实现思路为我们提供了一个非常好的着手点，我们只需要对这段逻辑进行拦截，将控件的实例化委托给换肤库即可：
+
+![](skin_skin_layout_inflater.png)
+
+如图所示，我们使用`SkinCompatViewInflater`拦截替换了系统`LayoutInflater`本身的逻辑，以`CardView`为例，在解析到对应的标签时，将`CardView`生成的逻辑委托给下面的依赖库，如果工程中添加了对应的依赖，那么就能生成对应的`SkinCompatCardView`，自然也就支持了动态换肤功能。
+
+当然，这一切逻辑的实现，起源于工程添加对应的依赖,然后在APP启动时进行初始化：
+
+```groovy
+implementation 'skin.support:skin-support:1.0.0'   
+implementation 'skin.support:skin-support-cardview:1.0.0'
+```
+
+```java
+// App.onCreate()
+SkinCompatManager.withApplication(this)
+                .addInflater(new SkinAppCompatViewInflater())   // 基础控件换肤
+                .addInflater(new SkinCardViewInflater())        // cardView
+                .init();     
+```
+
+这样，库的设计者为换肤库提供了足够的灵活性，既避免了对现有工程大刀阔斧的修改，又保证极低的使用和迁移成本，如果我希望 **移除** 或者 **替换** 换肤库，只需要删除`build.gradle`中的依赖和`Application`中初始化的代码就可以了。
