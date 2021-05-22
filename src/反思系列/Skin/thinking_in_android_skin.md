@@ -24,7 +24,7 @@
 
 本文将针对 `Android` 应用整个换肤体系进行概括性的描述，读者应抛开对 **技术实现的细节** 的执著，从不同角色的需求去思考，**窥一斑而知全豹** ，为产品打造出健壮有力的功能实现。
 
-## 一、定义规范
+## 一、定义UI规范
 
 换肤规范的目的是什么？对于UI设计和开发人员而言，设计与开发都应该基于统一且完整的规范之上进行，以掘金APP为例：
 
@@ -53,7 +53,7 @@
     android:textColor="@color/skinPrimaryTextColor" />
 ```
 
-## 二、产品化思维的构建：皮肤包
+## 二、构建产品化思维：皮肤包
 
 如何衡量一个开发人员的能力——对复杂功能快速、稳定的交付？
 
@@ -87,7 +87,8 @@ public void initView() {
 /**
  * 获取当前皮肤下真正的color资源，所有color的获取都必须通过该方法。
  **/
-public static int getColorResByTheme(@ColorRes int colorRes) {
+@ColorRes
+public static int getColorRes(@ColorRes int colorRes) {
   // 伪代码
   if (isLightMode) {     // 日间模式
      return colorRes;    // skinPrimaryTextColor
@@ -96,14 +97,41 @@ public static int getColorResByTheme(@ColorRes int colorRes) {
   }
 }
 
-// 代码中使用
-tv.setTextColor(SkinUtil.getColorResByTheme(R.color.skinPrimaryTextColor));
+// 代码中使用该方法，设置标题和次级标题颜色
+tv.setTextColor(SkinUtil.getColorRes(R.color.skinPrimaryTextColor));
+tvSubTitle.setTextColor(SkinUtil.getColorRes(R.color.skinSecondaryTextColor));
 ```
 
 > 很明显，`return colorRes + "_Dark"`这行代码作为`int`类型的返回值是不成立的，读者无需关注具体实现，因为这种封装仍 **未摆脱笨重的 if-else 实现** 的本质。
 
-## 换肤功能的核心实现：LayoutInflater.Factory2
+可以预见，随着主题数量逐步增多，换肤相关的代码越来越臃肿，最关键的问题是，所有控件的相关颜色都强耦合于换肤相关代码本身，每个UI容器（`Activity`/`Fragment`/自定义`View`）等需要追加`Java`代码手动设置。
 
-###
+此外，当皮肤数量达到一定规模时，`color`资源的庞大势必影响到`apk`体积，因此主题资源的动态加载发势在必行，用户安装应用时默认只有一个主题，其它主题 **按需下载和安装** ，比如淘宝：
+
+![](taobao.png)
+
+到了这里，**皮肤包** 的概念应运而出，开发者需要将单个主题的颜色资源视为一个 **皮肤包**，在不同的主题下，对不同的皮肤包进行加载和资源替换：
+
+```xml
+<!--日间模式皮肤包的colors.xml-->
+<resources>
+    <color name="skinPrimaryTextColor">#000000</color>
+    ...
+</resources>
+
+<!--深色模式皮肤包的colors.xml-->
+<resources>
+    <color name="skinPrimaryTextColor">#FFFFFF</color>
+    ...
+</resources>
+```
+
+因此，开发有必要站在产品的角度，根据需求权衡不同的实现方案，找到适合自身产品的技术选型和开发周期，最后动手编码。
+
+## 三、整合实现思路
+
+
+### 1.核心实现：LayoutInflater.Factory2
+
 
 读者应该知道，
