@@ -1,5 +1,7 @@
 # 反思 | 开启B站少女心模式，探究APP换肤机制的设计与实现
 
+> **反思** 系列博客是我的一种新学习方式的尝试，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
+
 ## 概述
 
 **换肤功能** 并非奇技淫巧，而是已非常普及，尤其当`Android Q`推出了 **深色模式** 之后，国内绝大多数主流应用都至少提供了 **日间** 和 **夜间** 两种模式。
@@ -295,13 +297,14 @@ switch (name) {
 
 ![](skin_skin_layout_inflater.png)
 
-如图所示，我们使用`SkinCompatViewInflater`拦截替换了系统`LayoutInflater`本身的逻辑，以`CardView`为例，在解析到对应的标签时，将`CardView`生成的逻辑委托给下面的依赖库，如果工程中添加了对应的依赖，那么就能生成对应的`SkinCompatCardView`，自然也就支持了动态换肤功能。
+如图所示，我们使用`SkinCompatViewInflater`拦截替换了系统`LayoutInflater`本身的逻辑，以`CardView`为例，解析标签时，将`CardView`生成的逻辑委托给下面的依赖库，如果工程中添加了对应的依赖，那么就能生成对应的`SkinCompatCardView`，其自然支持了动态换肤功能。
 
 当然，这一切逻辑的实现，起源于工程添加对应的依赖,然后在APP启动时进行初始化：
 
 ```groovy
 implementation 'skin.support:skin-support:1.0.0'   
 implementation 'skin.support:skin-support-cardview:1.0.0'
+// implementation 'skin.support:skin-support-constraint-layout:1.0.0'  // 未添加ConstraintLayout换肤支持
 ```
 
 ```java
@@ -309,7 +312,116 @@ implementation 'skin.support:skin-support-cardview:1.0.0'
 SkinCompatManager.withApplication(this)
                 .addInflater(new SkinAppCompatViewInflater())   // 基础控件换肤
                 .addInflater(new SkinCardViewInflater())        // cardView
+                //.addInflater(new SkinConstraintViewInflater())   // 未添加ConstraintLayout换肤支持
                 .init();     
 ```
 
+以`ConstraintLayout`为例，当没有对应的依赖时（），则会默认通过反射进行构造，生成标签本身对应的`ConstraintLayout`，其本身因为未实现`SkinSupportable`，自然不会进行换肤更新。
+
 这样，库的设计者为换肤库提供了足够的灵活性，既避免了对现有工程大刀阔斧的修改，又保证极低的使用和迁移成本，如果我希望 **移除** 或者 **替换** 换肤库，只需要删除`build.gradle`中的依赖和`Application`中初始化的代码就可以了。
+
+## 四、深入性探讨
+
+接下来笔者将针对换肤库本身更多细节进行深入性的探讨。
+
+### 1、皮肤包加载策略
+
+**策略模式** 在换肤库的设计过程中也有非常良好的体现。
+
+对于不同的皮肤包而言，其 **加载、安装的策略理应是不同的** ，举例来说：
+
+* 1、每个`APP`都有一个默认的皮肤包（通常是日间模式），策略需要安装后立即对其进行加载；
+* 2、如果皮肤包是远程的，用户点击切换皮肤，需要从远程拉取，下载成功后进行安装加载；
+* 3、皮肤包下载安装成功，之后应该从本地SD卡进行加载；
+* 4、其他自定义加载策略，比如远程的皮肤包有加密，本地加载后解密等。
+
+因此，设计者应将皮肤包的加载和安装抽象为一个`SkinLoaderStrategy`接口，便于开发者更方便和灵活性的按需配置。
+
+此外，由于加载行为本身极大可能是耗时操作，因此应该控制好线程的调度，并及时通过定义`SkinLoaderListener`回调，对加载的进度和结果进行及时的通知：
+
+```java
+/**
+ * 皮肤包加载策略.
+ */
+public interface SkinLoaderStrategy {
+    /**
+     * 加载皮肤包.
+     */
+    String loadSkinInBackground(Context context, String skinName, SkinLoaderListener listener);
+}
+
+/**
+ * 皮肤包加载监听.
+ */
+public interface SkinLoaderListener {
+    /**
+     * 开始加载.
+     */
+    void onStart();
+
+    /**
+     * 加载成功.
+     */
+    void onSuccess();
+
+    /**
+     * 加载失败.
+     */
+    void onFailed(String errMsg);
+}
+```
+
+### 2、进一步节省性能
+
+上文中，笔者提到，因为持有了所有的`Activity`的引用，所以换肤库在换肤后，可以尝试让所有页面的所有`View`去更新换肤。
+
+实际上「更新所有页面动」通常是没必要的，更合理的方式是提供一个可配置项，换肤成功时，默认只刷新前台的`Activity`，其它页面在`onResume`执行后再更新，这样能够大幅度降低渲染带来的性能影响。
+
+此外，每次换肤重复的遍历`View`树进行刷新也是一个耗时的操作，可以通过在`LayoutInflater`创建`View`树的同时，将实现了`SkinSupportable`的`View`存在页面所属的一个集合中，当换肤发生时，只需要针对集合中的`View`进行更新即可。
+
+最后，可以将上述文字中的`Activity`和`View`都通过弱引用去持有，以降低内存泄漏的可能。
+
+### 3、提供图片资源的换肤能力
+
+既然`color`资源能够支持换肤，`drawable`资源理所当然也应该提供支持，这样页面的展示可以更加多元化，通常这种场景应用于页面的背景图，对此读者可以参考淘宝APP的换肤功能效果：
+
+|资源Key|日间模式|深色模式|备注|
+|-|-|- ||
+|skinPrimaryTextColor|#000000|#FFFFFF|标题字体颜色|
+|skinSecondaryTextColor|#CCCCCC|#CCCCCC|次级标题字体颜色|
+|**skinMainBgDrawable**|A图片|B图片|页面主背景图|
+|**skinProgressBarDrawable**|C动画|D动画|加载框动画|
+|其他更多...|| ||
+
+## 小结
+
+小结并不是总结，还有更多内容可以扩展，比如：
+
+* 1、`Android`系统中`Resources`类是如何实现资源的替换的，换肤库中又做了哪些处理？
+* 2、`LayoutInflater`源码中明确表示，一个`LayoutInflater`只能设置一次`setFactory2()`，否则会抛出异常，那么，换肤库是在哪个时机进行`Factory2`的注入的呢，为什么要这样设计？
+* 3、如何根据需求进一步扩展换肤库的功能，比如提供单页面不换肤的支持，以及提供多个页面使用不同皮肤包的支持？
+* 4、如何提供更多测试阶段、运维阶段可以利用的工具？
+* 5、截止笔者发稿时，2021 Google IO 大会上又提出了新的UI设计理念 **Material You**，将 **主题** 的概念从`APP`上升到了整个操作系统，其对于现有的换肤功能是否有新的影响？
+
+实现没有终点，开发者能够做到的是通过不断多方位的反思，为产品提供展示更多价值的可能性，从而更进一步，完成自身专业能力阶段性的跨越。
+
+## 感谢
+
+本文设计思路的搭建，参考了`GitHub`上目前`star`数量最多的换肤库 [Android-skin-support](https://github.com/ximsfei/Android-skin-support) , 感谢作者 [ximsfei](https://github.com/ximsfei) 为开发者提供了这么优秀的设计。
+
+还要感谢 **哔哩哔哩** 、**掘金**、 **淘宝** 、**微信** 多个优秀的应用为本文提供了多种换肤功能的展示。
+
+再次感谢。
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
