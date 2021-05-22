@@ -10,7 +10,7 @@
 
 以 **哔哩哔哩** 为例，除了提供以上两种主题之外，还免费提供了充满 **少女心** 的粉色主题：
 
-![](bilibili.png)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/bilibili.png)
 
 从产品的前瞻性上来看，国内在换肤功能的探索较国外是领先的，抽象的来看待`Android Q`的 **深色模式**，也无非是新增一种主题罢了，因此，开发者应该将角度放在更高的层级上：**为产品提供一套完善的换肤方案**，而非仅仅是  **适配深色模式** 。
 
@@ -30,7 +30,7 @@
 
 换肤规范的目的是什么？对于UI设计和开发人员而言，设计与开发都应该基于统一且完整的规范之上进行，以掘金APP为例：
 
-![](skin_juejin_design.png)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/skin_juejin_design.png)
 
 对于UI设计人员，在APP不同的主题下，控件的颜色不再是一个单一的值，而应该用一个通用的`key`来进行定义，如上图所示，「标题」的颜色，在日间应该是黑色`#000000`，而深色模式下则应该为白色`#FFFFFF`，同理，「次级标题」、「主背景色」、「分割线颜色」，都应该随着不同的主题下，对应不同的值。
 
@@ -110,7 +110,7 @@ tvSubTitle.setTextColor(SkinUtil.getColorRes(R.color.skinSecondaryTextColor));
 
 此外，当皮肤数量达到一定规模时，`color`资源的庞大势必影响到`apk`体积，因此主题资源的动态加载发势在必行，用户安装应用时默认只有一个主题，其它主题 **按需下载和安装** ，比如淘宝：
 
-![](taobao.png)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/taobao.png)
 
 到了这里，**皮肤包** 的概念应运而出，开发者需要将单个主题的颜色资源视为一个 **皮肤包**，在不同的主题下，对不同的皮肤包进行加载和资源替换：
 
@@ -151,7 +151,7 @@ tvSubTitle.setTextColor(SkinUtil.getColorRes(R.color.skinSecondaryTextColor));
 
 以微信注册页面为例，手动切换到深色模式后，微信进行了页面的刷新：
 
-![](hot_update_wechat.gif)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/hot_update_wechat.gif)
 
 读者不禁会问，**动态刷新的意义是什么** ，让当前页面重建或者APP重启不行吗？
 
@@ -291,11 +291,11 @@ switch (name) {
 
 一图以蔽之：
 
-![](skin_layout_inflater.png)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/skin_layout_inflater.png)
 
 因此，`LayoutInflater`本身的实现思路为我们提供了一个非常好的着手点，我们只需要对这段逻辑进行拦截，将控件的实例化委托给换肤库即可：
 
-![](skin_skin_layout_inflater.png)
+![](https://raw.githubusercontent.com/qingmei2/blogs/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/Skin/skin_skin_layout_inflater.png)
 
 如图所示，我们使用`SkinCompatViewInflater`拦截替换了系统`LayoutInflater`本身的逻辑，以`CardView`为例，解析标签时，将`CardView`生成的逻辑委托给下面的依赖库，如果工程中添加了对应的依赖，那么就能生成对应的`SkinCompatCardView`，其自然支持了动态换肤功能。
 
