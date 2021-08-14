@@ -54,7 +54,7 @@
 
 现在回到 `Android`。 首先，我们需要音频的 `PCM` 数据。 为此，我们可以将 `AudioProcessor` 配置给到我们的 `ExoPlayer` 实例，它会在转发之前接收每个音频字节。您还可以进行修改，例如更改 **幅度** 或 **过滤通道**，但不是现在。
 
-```Kotlin
+```kotlin
 private val fftAudioProcessor = FFTAudioProcessor()
 
 val renderersFactory = object : DefaultRenderersFactory(this) {
@@ -115,3 +115,15 @@ player = ExoPlayerFactory.newSimpleInstance(this, renderersFactory, DefaultTrack
 ## 最终效果
 
 我创建了一个 [代码仓库](https://github.com/dzolnai/ExoVisualizer)，这上面，我通过播放在线广播并使用我创建的可视化器进行绘图，以展示我的 `FFT` 处理器。它肯定不能直接用于线上产品，但如果您正在为音乐`APP`寻找可视化工具，它会提供一个很好的基础。
+
+---
+## 关于译者
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/main/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/main/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/main/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
