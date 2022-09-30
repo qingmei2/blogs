@@ -16,8 +16,8 @@
 
 ## 系列目录
 
-* [反思｜Android View机制设计与实现：测量流程](https://github.com/qingmei2/blogs/issues/12)  
-* [反思｜Android View机制设计与实现：布局流程](https://github.com/qingmei2/blogs/issues/13)
+* [反思｜Android View机制设计与实现：测量流程](https://github.com/qingmei2/blogs/issues/23)  
+* [反思｜Android View机制设计与实现：布局流程](https://github.com/qingmei2/blogs/issues/24)
 
 * [反思｜Android LayoutInflater机制的设计与实现](https://github.com/qingmei2/blogs/issues/25)
 * [反思｜Android 事件分发机制的设计与实现](https://github.com/qingmei2/blogs/issues/27)
@@ -37,3 +37,5 @@
 * [反思 | 开启B站少女心模式，探究APP换肤机制的设计与实现](https://github.com/qingmei2/blogs/issues/55)
 
 * [反思 | Android 音视频缓存机制的系统性设计](https://github.com/qingmei2/blogs/issues/57)
+
+* [反思 | Google 为何把 SurfaceView 设计的这么难用？](https://github.com/qingmei2/blogs/issues/62)
