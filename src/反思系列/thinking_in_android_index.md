@@ -22,7 +22,7 @@ PS: 一些朋友曾友好指出，这是否是对 **反思** 一词的误用，�
 >
 > The core idea of this learning and summarizing approach is that the focus of the article should be on the transmission of ideas rather than code. I don't need to be obsessed with the details of the code and the meaning of each line of code - even if I forget it later, I can quickly pick up this knowledge through quick reading. Instead of looking at the large blocks of source code and annotations that seem familiar but strange, causing furrowed brows.
 >
-> The "Thinking in Android" series is my attempt at this learning and summarizing approach. The word "reflection" used here does not mean self-reflection, but refers to the rethinking of a knowledge system after initial mastery, with the ultimate goal that each article can be collected and read over and over again.
+> The "Thinking in Android" series is my attempt at this learning and summarizing approach. The word "Thinking" used here does not mean self-reflection, but refers to the rethinking of a knowledge system after initial mastery, with the ultimate goal that each article can be collected and read over and over again.
 
 ## 系列目录
 
