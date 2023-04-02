@@ -12,7 +12,17 @@
 
 **反思系列(Thinking in Android)** 是我对这种学习总结方式的一种尝试，此处 **反思** 一词并非自我反省的意思，而是指 **对某个知识体系初步掌握后，对该体系进行的重新思考**，其最终目标是：每一篇文章都能被收藏和一遍又一遍地阅读回顾。
 
-> PS: 一些朋友曾友好指出，这是否是对 **反思** 一词的误用，对此请参考[百度百科](https://baike.baidu.com/item/%E5%8F%8D%E6%80%9D/10319867#viewPageContent)的解释，可见该词的确有从另外的观点重新认知事物的含义。
+PS: 一些朋友曾友好指出，这是否是对 **反思** 一词的误用，对此请参考[百度百科](https://baike.baidu.com/item/%E5%8F%8D%E6%80%9D/10319867#viewPageContent)的解释，可见该词的确有从另外的观点重新认知事物的含义。
+
+> I have written many blog posts, and among them, there is a part related to source code analysis. Unfortunately, these are the least reviewed blog series for me, as they involve a lot of copy-pasting of code snippets and verbose comments that can be seen everywhere. To be honest, after writing many source code analysis blog posts, I never went back to review them.
+>
+> In retrospect, I realized that the blog posts that focus on source code and annotations analysis are not an effective way of learning. This approach usually starts with the API and works backward to the result, which means that I only know the result but not the reason behind it.
+>
+> On the other hand, I believe that the correct way of learning and summarizing is to first understand the concept, then gradually enrich the code, and perfect the entire system from the macro to the detail.
+>
+> The core idea of this learning and summarizing approach is that the focus of the article should be on the transmission of ideas rather than code. I don't need to be obsessed with the details of the code and the meaning of each line of code - even if I forget it later, I can quickly pick up this knowledge through quick reading. Instead of looking at the large blocks of source code and annotations that seem familiar but strange, causing furrowed brows.
+>
+> The "Thinking in Android" series is my attempt at this learning and summarizing approach. The word "reflection" used here does not mean self-reflection, but refers to the rethinking of a knowledge system after initial mastery, with the ultimate goal that each article can be collected and read over and over again.
 
 ## 系列目录
 
