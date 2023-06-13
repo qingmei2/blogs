@@ -204,7 +204,7 @@ public abstract static class Result {
 
 考虑到安全性，`WorkManager` 最终选择使用了 `Room` 数据库，并且设计维护了一个非常复杂的 `Database`，简单罗列下核心的 `WorkSpec` 表:
 
-```Kotlin
+```java
 @Entity(indices = [Index(value = ["schedule_requested_at"]), Index(value = ["last_enqueue_time"])])
 data class WorkSpec(
     
@@ -249,7 +249,7 @@ data class WorkSpec(
 
 设计好字段后，接下来我们设计其操作类 `WorkSpecDao` :
 
-```Kotlin
+```java
 @Dao
 interface WorkSpecDao {
   // ...
@@ -277,7 +277,7 @@ interface WorkSpecDao {
 
 读者经过认真考虑后，可得该设计是合理的——由于有 `setState()` 可更新任务的状态，已完成或取消的工作无需删除，而是通过 `SQL` 语句，灵活分类按需获取，如：
 
-```Kotlin
+```java
 @Dao
 interface WorkSpecDao {
   // ...
@@ -296,10 +296,10 @@ interface WorkSpecDao {
 }
 ```
 
-这可称之额外收获，通过 `Room` 的持久化存储，在保证了任务稳定执行的同时，还可对所有任务进行备份，从而向开发者提供更多额外的能力。
+这可称之额外收获，通过 `Room` 的持久化存储，在保证了任务能够被稳定执行的同时，还可对所有任务进行备份，从而向开发者提供更多额外的能力。
 
-> 准确来说，`WorkManager` 内部的 `Dao` 提供了 `Delete` 方法，但并未直接暴露给开发者，而是用于解决 **任务间的冲突** 问题，这个后文再提。
+> 准确来说，`WorkManager` 内部的 `Dao` 提供了 `Delete` 方法，但并未直接暴露给开发者，而是用于内部解决 **任务间的冲突** 问题，这个后文再提。
 
-### 3.优先级管理
+## 优先级 ≠ 加急
 
 ### 4.任务约束
