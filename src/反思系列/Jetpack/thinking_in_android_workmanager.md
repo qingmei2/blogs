@@ -30,7 +30,7 @@
 
 最终的目的，并非是让读者将 `WorkManager` 强行引入和使用，而是对 **后台任务的管理和调度工具** （后文简称 **后台任务库** ）有一个清晰的认知——即使从未使用过，在将来的某一天，遇到类似的业务诉求时，也能快速形成一个清晰的思路和方案。
 
-##  一、基本概念
+##  基本概念
 
 想要构建一个优秀的后台任务库，需要依靠不断的迭代、优化和扩展，最终成为一个灵活、完善的工具。
 
@@ -168,7 +168,7 @@ public abstract static class Result {
 }
 ```
 
-## 二、持久化
+## 持久化
 
 目前为止，我们实现了一个简化版、基于内存中队列的后台任务库，接下来我们将针对 **后台任务持久化** 的必要性，进行进一步的讨论。
 
@@ -178,7 +178,7 @@ public abstract static class Result {
 
 作为互联网的从业者，读者对类似的提示弹窗应该并不陌生：
 
-> 您手机/PC的新版本已下载完毕，请选择：「立即安装」、「定时安装」、「稍后提醒我」
+> 您手机/PC的新版本已下载完毕：「立即安装」、「定时安装」、「稍后提醒我」
 
 显然，这是一个常见的功能，用户选择后，应用或系统的后台需在未来的某个时间点，升级或提醒用户。如果和前文中的任务类型进行区分，前者我们可以归纳为 **即时任务**，后者则可称之为 **延时任务** 或 **非即时任务**。
 
@@ -192,10 +192,114 @@ public abstract static class Result {
 
 严格意义上讲，此时，即时任务都转化为了非即时任务，再进一步抽象，**所有即时任务都是非即时任务**。
 
-**万物皆异步**，在异步编程工具的领域中，无论是 `Handler`、`RxJava` 亦或者或 `协程`，这是非常基本的理念。
+> **万物皆可异步**，是异步编程的一个经典概念，该思想在 `Handler`、`RxJava` 或 `协程` 中都有体现。
 
-### 1.持久化存储
+即时任务被延时执行是合理的吗？对于后台任务而言，是非常合理的，如果开发者有明确的诉求， **必须** 且 **立即** 执行某段业务逻辑，那么就不应该用 **后台任务库**，而是直接在内存中调用这块代码。
 
-### 2.优先级管理
+### 2.持久化存储
 
-### 3.任务约束
+当后台任务可能被延时执行，接下来思考下一个问题，如何保证任务执行的可靠性？
+
+终极解决方案必然是 **后台任务持久化**，通过本地文件或者数据库存储后，即使进程被用户杀掉或系统回收，在合适的时机，`APP`总是能够将任务恢复并重建。
+
+考虑到安全性，`WorkManager` 最终选择使用了 `Room` 数据库，并且设计维护了一个非常复杂的 `Database`，简单罗列下核心的 `WorkSpec` 表:
+
+```Kotlin
+@Entity(indices = [Index(value = ["schedule_requested_at"]), Index(value = ["last_enqueue_time"])])
+data class WorkSpec(
+    
+    // 1.任务执行的状态，ENQUEUED/RUNNING/SUCCEEDED/FAILED/CANCELLED
+    @JvmField
+    @ColumnInfo(name = "state")
+    var state: WorkInfo.State = WorkInfo.State.ENQUEUED,
+
+    // 2.Worker的类名，便于反射和日志打印
+    @JvmField
+    @ColumnInfo(name = "worker_class_name")
+    var workerClassName: String,
+
+    // 3.输入参数
+    @JvmField
+    @ColumnInfo(name = "input")
+    var input: Data = Data.EMPTY,
+   
+    // 4.输出参数
+    @JvmField
+    @ColumnInfo(name = "output")
+    var output: Data = Data.EMPTY,
+    
+    // 5.定时任务
+    @JvmField
+    @ColumnInfo(name = "initial_delay")
+    var initialDelay: Long = 0,
+    
+    // 6.定期任务
+    @JvmField
+    @ColumnInfo(name = "interval_duration")
+    var intervalDuration: Long = 0,
+    
+    // 7.约束关系
+    @JvmField
+    @Embedded
+    var constraints: Constraints = Constraints.NONE,
+    
+    // ...
+)
+```
+
+设计好字段后，接下来我们设计其操作类 `WorkSpecDao` :
+
+```Kotlin
+@Dao
+interface WorkSpecDao {
+  // ...
+  
+  @Insert(onConflict = OnConflictStrategy.IGNORE)
+  fun insertWorkSpec(workSpec: WorkSpec)
+  
+  @Query("SELECT * FROM workspec WHERE id=:id")
+  fun getWorkSpec(id: String): WorkSpec?
+  
+  @Query("SELECT id FROM workspec")
+  fun getAllWorkSpecIds(): List<String>
+   
+  @Query("UPDATE workspec SET state=:state WHERE id=:id")
+  fun setState(state: WorkInfo.State, id: String): Int
+  
+  @Query("SELECT state FROM workspec WHERE id=:id")
+  fun getState(id: String): WorkInfo.State?
+  
+  // ...
+}
+```
+
+细心的读者会发现，`WorkSpecDao` 的设计中除了声明常规的 `Insert`、`Query`、`Update` 等，并没有 `DELETE` 类型的操作。
+
+读者经过认真考虑后，可得该设计是合理的——由于有 `setState()` 可更新任务的状态，已完成或取消的工作无需删除，而是通过 `SQL` 语句，灵活分类按需获取，如：
+
+```Kotlin
+@Dao
+interface WorkSpecDao {
+  // ...
+  
+  // 获取全部执行中的任务
+  @Query("SELECT * FROM workspec WHERE state=RUNNING")
+  fun getRunningWork(): List<WorkSpec>
+
+  // 获取全部近期已完成的任务
+  @Query(
+      "SELECT * FROM workspec WHERE last_enqueue_time >= :startingAt AND state IN COMPLETED_STATES ORDER BY last_enqueue_time DESC"
+  )
+  fun getRecentlyCompletedWork(startingAt: Long): List<WorkSpec>
+  
+  // ...
+}
+```
+
+这可称之额外收获，通过 `Room` 的持久化存储，在保证了任务稳定执行的同时，还可对所有任务进行备份，从而向开发者提供更多额外的能力。
+
+> 准确来说，`WorkManager` 内部的 `Dao` 提供了 `Delete` 方法，但并未直接暴露给开发者，而是用于解决 **任务间的冲突** 问题，这个后文再提。
+
+### 3.优先级管理
+
+### 4.任务约束
