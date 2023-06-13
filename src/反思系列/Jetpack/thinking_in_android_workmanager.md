@@ -51,9 +51,9 @@
 ```java
 // androidx.work.impl.utils.taskexecutor.WorkManagerTaskExecutor
 public class WorkManagerTaskExecutor implements TaskExecutor {
-  
+
   final Handler mMainThreadHandler = new Handler(Looper.getMainLooper());
-  
+
   // 1.可切换主线程
   private final Executor mMainThreadExecutor = new Executor() {
     @Override
@@ -61,7 +61,7 @@ public class WorkManagerTaskExecutor implements TaskExecutor {
         mMainThreadHandler.post(command);
     }
   };
-  
+
   // 2.可切换后台工作线程
   private final Executor mBackgroundExecutor = Executors.newFixedThreadPool(
                 Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4)),
@@ -79,7 +79,7 @@ public class WorkManagerTaskExecutor implements TaskExecutor {
 
 ```java
 public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E> {
-  
+
   public boolean add(E e);
 
   public boolean offer(E e);
@@ -100,7 +100,7 @@ public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E> {
 
 ```java
 public class SerialExecutorImpl implements SerialExecutor {
-  
+
   // 1. 任务队列
   private final ArrayDeque<Task> mTasks;
   // 2. 后台线程的Executor，即上文中数量为4的线程池
@@ -109,7 +109,7 @@ public class SerialExecutorImpl implements SerialExecutor {
   // 3.锁对象
   @GuardedBy("mLock")
   private Runnable mActive;
-  
+
   @Override
   public void execute(@NonNull Runnable command) {
       // 不断地入列、出列和任务执行
@@ -143,7 +143,7 @@ public class SerialExecutorImpl implements SerialExecutor {
 
 ```java
 public abstract class Worker {
-   
+
     // 后台任务的具体实现，`WorkerManager`内部进行了线程调度，执行在工作线程.
     @WorkerThread
     public abstract @NonNull Result doWork();
@@ -168,12 +168,34 @@ public abstract static class Result {
 }
 ```
 
-## 二、进阶概念
+## 二、持久化
 
-### 1.任务的持久化和恢复
+目前为止，我们实现了一个简化版、基于内存中队列的后台任务库，接下来我们将针对 **后台任务持久化** 的必要性，进行进一步的讨论。
+
+### 1.非即时任务
+
+第一步我们需要引入 **非即时任务** 的概念。
+
+作为互联网的从业者，读者对类似的提示弹窗应该并不陌生：
+
+> 您手机/PC的新版本已下载完毕，请选择：「立即安装」、「定时安装」、「稍后提醒我」
+
+显然，这是一个常见的功能，用户选择后，应用或系统的后台需在未来的某个时间点，升级或提醒用户。如果和前文中的任务类型进行区分，前者我们可以归纳为 **即时任务**，后者则可称之为 **延时任务** 或 **非即时任务**。
+
+非即时任务的诉求，将会使我们现有 **后台任务库** 的 **复杂度呈指数级提升** ，但这是 **必要** 的，原因如下：
+
+首先，上文中 **定期任务** 也属于非即时任务的范畴，虽然该任务是立即执行并等待的，但实际上其真正的业务逻辑，仍是未来的某个时间点触发；其次，也是最重要的一点，作为一个健壮的后台任务库，和 **即时任务** 相比，对 **非即时任务** 提供支持的优先级要高得多。
+
+——这似乎违反直觉，在日常开发中， **即时任务** 似乎才是主流，但我们忽视了一个事实，**资源并非无限**。
+
+在文章的开始，我们构建了基本的线程调度能力，并创建了一个数量为 `4` 的线程池。但随着业务复杂度的提升，线程池可能会同时执行多个任务，这意味着部分晚入列、或优先级低的任务，会经常性等待前面的任务执行完毕。
+
+严格意义上讲，此时，即时任务都转化为了非即时任务，再进一步抽象，**所有即时任务都是非即时任务**。
+
+**万物皆异步**，在异步编程工具的领域中，无论是 `Handler`、`RxJava` 亦或者或 `协程`，这是非常基本的理念。
+
+### 1.持久化存储
 
 ### 2.优先级管理
 
 ### 3.任务约束
-
-
