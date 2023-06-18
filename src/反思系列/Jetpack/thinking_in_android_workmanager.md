@@ -1,4 +1,4 @@
-#  WorkManager 的设计与实现：系统概述
+# 被遗忘者，WorkManager 的设计与实现：系统概述
 
 > **反思** 系列博客是一种看似 **"内卷"** ，但却 **效果显著** 的学习方式，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
 
@@ -386,4 +386,41 @@ public class WorkManagerImpl extends WorkManager {
 
 两点结合，`WorkManager` 的定期任务受到了严格的限制，这也意味着类似**保活**需求其无法满足，其 “不稳定” 性这也是其国内应用较少的主要原因之一。
 
-### 3.加急任务
+### 3.前台服务
+
+最后，我们针对 **如何规范地调度系统资源** 进行探讨。
+
+最经典的场景仍然是后台任务的加急，即使有约束条件，部分后台任务仍需要被 **特殊加急** ，比如 **用户聊天时发送短视频**、**处理付款或订阅流程** 等。这些任务对用户很重要，会在后台快速执行，并需要立即开始执行。
+
+> 系统对于应用的资源分配非常严格，读者可以通过 **[这里](https://developer.android.google.cn/topic/performance/appstandby?hl=zh-cn)** 简单了解。
+
+由于任务的执行依赖于系统对资源的分配，因此想要提高执行的优先级，势必需要提升 `APP` 组件自身的优先级，那么实现方案已经非常明显了：使用 **前台服务** 。
+
+当你需要通过调用类似 `worker.setExpedited(true)` 标记为加急任务时，`Worker` 内部的具体实现，需开发者额外创建前台通知，提升优先级的同时，将你后台的任务行为同步给用户。
+
+## 小结
+
+小结并不是总结，还有更多内容可以扩展，比如：
+
+* 1、`Android` 系统的 `JobScheduler` 任务调度机制的内部原理是什么样的？
+
+* 2、`WorkManager` 组件的初始化机制、持久化机制等，内部的实现细节有哪些需要注意的？
+
+* 3、`WorkManager` 中的约束任务和非约束任务在执行上有什么不同？
+
+* 4、`WorkManager` 还有哪些其它的亮点？
+
+篇幅原因，这些问题笔者将另起一篇进行更深入性的讨论，敬请期待。
+
+---
+
+## 关于我
+
+Hello，我是 [却把清梅嗅](https://github.com/qingmei2) ，如果您觉得文章对您有价值，欢迎 ❤️，也欢迎关注我的 [博客](https://blog.csdn.net/mq2553299) 或者 [GitHub](https://github.com/qingmei2)。
+
+如果您觉得文章还差了那么点东西，也请通过 **关注** 督促我写出更好的文章——万一哪天我进步了呢？
+
+* [我的Android学习体系](https://github.com/qingmei2/blogs)
+* [关于文章纠错](https://github.com/qingmei2/blogs/blob/master/error_collection.md)
+* [关于知识付费](https://github.com/qingmei2/blogs/blob/master/appreciation.md)
+* [关于《反思》系列](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md)
