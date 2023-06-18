@@ -1,5 +1,7 @@
 #  WorkManager 的设计与实现：系统概述
 
+> **反思** 系列博客是一种看似 **"内卷"** ，但却 **效果显著** 的学习方式，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
+
 ## 困境
 
 作为一名 `Android` 开发者，即使你没有用过，也一定对 `WorkManager` 耳熟能详。
@@ -198,7 +200,7 @@ public abstract static class Result {
 
 ### 2.持久化存储
 
-当后台任务可能被延时执行，接下来思考下一个问题，如何保证任务执行的可靠性？
+当后台任务可能被延时执行，思考下一个问题，如何保证任务执行的可靠性？
 
 终极解决方案必然是 **后台任务持久化**，通过本地文件或者数据库存储后，即使进程被用户杀掉或系统回收，在合适的时机，`APP`总是能够将任务恢复并重建。
 
@@ -300,6 +302,88 @@ interface WorkSpecDao {
 
 > 准确来说，`WorkManager` 内部的 `Dao` 提供了 `Delete` 方法，但并未直接暴露给开发者，而是用于内部解决 **任务间的冲突** 问题，这个后文再提。
 
-## 优先级 ≠ 加急
+## 优先级管理
 
-### 4.任务约束
+下面我们针对任务的 **优先级** 进一步进行讨论。
+
+虽然上文明确说了，对于需要立即执行的行为，不应该作为后台任务，而是应该直接执行对应的业务代码块——看起来优先级机制并非刚需。
+
+但实际上，这种机制仍然有一定的必要性。
+
+### 1.约束条件
+
+说到 **约束条件**，熟悉 `JobScheduler` 的开发者对此不会感到陌生，
+
+约束条件 | 概念
+--- | :---
+NetworkType | 约束运行工作所需的网络类型。例如 Wi-Fi (UNMETERED)。
+BatteryNotLow | 如果设置为 true，那么当设备处于“电量不足模式”时，工作不会运行。
+RequiresCharging | 如果设置为 true，那么工作只能在设备充电时运行。
+DeviceIdle | 如果设置为 true，则要求用户的设备必须处于空闲状态，才能运行工作。在运行批量操作时，此约束会非常有用；若是不用此约束，**批量操作可能会降低用户设备上正在积极运行的其他应用的性能。**
+StorageNotLow | 如果设置为 true，那么当用户设备上的存储空间不足时，工作不会运行。
+
+`WorkManager` 也提供了类似的概念，实际上内部也正是基于 `JobScheduler` 实现的，但 `WorkManager` 并非只是单纯的代理。
+
+首先，当`API`版本不足时，`WorkManager` 兼容性使用 `AlarmManager` 或 `GcmScheduler` 作为补充：
+
+```java
+// androidx.work.impl.Schedulers.java
+static Scheduler createBestAvailableBackgroundScheduler(
+        @NonNull Context context,
+        @NonNull WorkManagerImpl workManager) {
+
+    Scheduler scheduler;
+
+    if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
+        scheduler = new SystemJobScheduler(context, workManager);
+    } else {
+        scheduler = tryCreateGcmBasedScheduler(context);
+        if (scheduler == null) {
+            scheduler = new SystemAlarmScheduler(context);
+        }
+    }
+    return scheduler;
+}
+```
+
+其次，读者知道，`JobScheduler` 的 `onStartJob` 等回调默认运行在主线程，不能直接进行耗时操作。`WorkManager` 的 `Worker` 内部则进行了线程调度，默认实现在 `WorkerThread`：
+
+```java
+// androidx.work.impl.background.systemjob.SystemJobService
+public class SystemJobService extends JobService {
+  
+    public boolean onStartJob(@NonNull JobParameters params) {
+      //...
+      mWorkManagerImpl.startWork(...);
+    }
+}
+
+// androidx.work.impl.WorkManagerImpl
+public class WorkManagerImpl extends WorkManager {
+  public void startWork(...) {
+      mWorkTaskExecutor.executeOnTaskThread(new StartWorkRunnable(...));
+  }
+}
+```
+
+由于 `JobScheduler` 是由系统服务中的 `JobSchedulerService` 实现的，因此其自身的高权限，可以在`APP`被杀或重启后，仍然可以唤起并执行 `JobService` 及对应的任务。
+
+### 2.新的保活机制？
+
+`Android` 官方提供了后台作业的强大支持，国内厂商大多数第一时间却想拿它来做 **保活**。
+
+——举例来说，既然 `WorkManager` 支持定期任务，且即使 `APP` 被杀或者重启都能够保证执行；那么我一个 `IM APP`，每 `10` 秒拉取下接口看有没有新消息，顺便启动下 `APP` 某些页面或者通知组件，想必也是非常合理的。
+
+![](jetpack_workmanager1.jpeg)
+
+实际上，对于 **保活** 的诉求，`WorkManager` 做不到，其本质是 `JobScheduler` 做不到：
+
+首先，随着版本的迭代，`Android` 系统对后台任务的管理愈发严苛，小于 `15` 分钟的定期任务已经被强制调整为 `15` 分钟执行，避免频繁的后台定时任务对前台应用的影响，规避了 `API` 的非法滥用：
+
+> WorkManager : 我把你当兄弟，你竟然想睡我？
+
+其次是笔者的猜测，由于用户安全等相关的考量，国内设备厂商对 `JobSchedulerService` 等相关都有一定的魔改——比如，当用户手动将 `APP` 强制关闭，这种操作意图拥有最高优先级，即使是系统服务也不应对其再次启动（厂商白名单除外，如微信和`QQ`?）。
+
+两点结合，`WorkManager` 的定期任务受到了严格的限制，这也意味着类似**保活**需求其无法满足，其 “不稳定” 性这也是其国内应用较少的主要原因之一。
+
+### 3.加急任务
