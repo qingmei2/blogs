@@ -10,7 +10,7 @@
 
 > **`WorkManager`** 用于执行可 **延迟**、**异步** 的后台任务。它提供了一个 **可靠**、**可调度** 的后台任务执行环境，可以处理 **即使在应用退出或设备重启后仍需要运行** 的任务。
 
-快速提炼重点，你得到了什么?
+快速提炼重点，我们得到了什么?
 
 > `WorkManager`，可以处理后台任务，这些任务哪怕手机重启也一定会执行?
 
@@ -23,8 +23,6 @@
 即使如此，`WorkManager` 仍和 `Paging` 面临着同样的 **困境**: 难以推广、默默无闻。简单的项目用不到，复杂的项目经过若干年的沉淀，该领域早已应用了其它方案，学习和迁移成本过高，以至不被需要。
 
 ——时至今日，社区内除了若干 **使用简介** 和 **源码分析** 的博客单篇，我们仍很难找到其 **实战进阶** 或 **最佳实践** 的相关系列。
-
-精兵如炬，困龙难飞。
 
 ## 目的
 
@@ -209,7 +207,7 @@ public abstract static class Result {
 ```java
 @Entity(indices = [Index(value = ["schedule_requested_at"]), Index(value = ["last_enqueue_time"])])
 data class WorkSpec(
-    
+
     // 1.任务执行的状态，ENQUEUED/RUNNING/SUCCEEDED/FAILED/CANCELLED
     @JvmField
     @ColumnInfo(name = "state")
@@ -224,27 +222,27 @@ data class WorkSpec(
     @JvmField
     @ColumnInfo(name = "input")
     var input: Data = Data.EMPTY,
-   
+
     // 4.输出参数
     @JvmField
     @ColumnInfo(name = "output")
     var output: Data = Data.EMPTY,
-    
+
     // 5.定时任务
     @JvmField
     @ColumnInfo(name = "initial_delay")
     var initialDelay: Long = 0,
-    
+
     // 6.定期任务
     @JvmField
     @ColumnInfo(name = "interval_duration")
     var intervalDuration: Long = 0,
-    
+
     // 7.约束关系
     @JvmField
     @Embedded
     var constraints: Constraints = Constraints.NONE,
-    
+
     // ...
 )
 ```
@@ -255,22 +253,22 @@ data class WorkSpec(
 @Dao
 interface WorkSpecDao {
   // ...
-  
+
   @Insert(onConflict = OnConflictStrategy.IGNORE)
   fun insertWorkSpec(workSpec: WorkSpec)
-  
+
   @Query("SELECT * FROM workspec WHERE id=:id")
   fun getWorkSpec(id: String): WorkSpec?
-  
+
   @Query("SELECT id FROM workspec")
   fun getAllWorkSpecIds(): List<String>
-   
+
   @Query("UPDATE workspec SET state=:state WHERE id=:id")
   fun setState(state: WorkInfo.State, id: String): Int
-  
+
   @Query("SELECT state FROM workspec WHERE id=:id")
   fun getState(id: String): WorkInfo.State?
-  
+
   // ...
 }
 ```
@@ -283,7 +281,7 @@ interface WorkSpecDao {
 @Dao
 interface WorkSpecDao {
   // ...
-  
+
   // 获取全部执行中的任务
   @Query("SELECT * FROM workspec WHERE state=RUNNING")
   fun getRunningWork(): List<WorkSpec>
@@ -293,7 +291,7 @@ interface WorkSpecDao {
       "SELECT * FROM workspec WHERE last_enqueue_time >= :startingAt AND state IN COMPLETED_STATES ORDER BY last_enqueue_time DESC"
   )
   fun getRecentlyCompletedWork(startingAt: Long): List<WorkSpec>
-  
+
   // ...
 }
 ```
@@ -351,7 +349,7 @@ static Scheduler createBestAvailableBackgroundScheduler(
 ```java
 // androidx.work.impl.background.systemjob.SystemJobService
 public class SystemJobService extends JobService {
-  
+
     public boolean onStartJob(@NonNull JobParameters params) {
       //...
       mWorkManagerImpl.startWork(...);
@@ -388,7 +386,7 @@ public class WorkManagerImpl extends WorkManager {
 
 ### 3.前台服务
 
-最后，我们针对 **如何规范地调度系统资源** 进行探讨。
+最后，我们讨论下 **如何规范地调度系统资源** 。
 
 最经典的场景仍然是后台任务的加急，即使有约束条件，部分后台任务仍需要被 **特殊加急** ，比如 **用户聊天时发送短视频**、**处理付款或订阅流程** 等。这些任务对用户很重要，会在后台快速执行，并需要立即开始执行。
 
