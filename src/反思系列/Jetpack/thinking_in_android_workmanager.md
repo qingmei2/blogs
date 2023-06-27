@@ -1,4 +1,4 @@
-# 被遗忘者，WorkManager 的设计与实现：系统概述
+# 社区说|浅谈 WorkManager 的设计与实现：系统概述
 
 > **反思** 系列博客是一种看似 **"内卷"** ，但却 **效果显著** 的学习方式，该系列起源和目录请参考 [这里](https://github.com/qingmei2/blogs/blob/master/src/%E5%8F%8D%E6%80%9D%E7%B3%BB%E5%88%97/thinking_in_android_index.md) 。
 
